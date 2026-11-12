@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Loan Manager</title>
+<title>Loan Manager</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#10243a"><link rel="icon" href="/icon.svg" type="image/svg+xml">
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1b2430;--mu:#66707d;--bd:#e2e5ea;--pr:#0f766e;--pr2:#e6f4f2;--rd:#c0392b;--am:#b7791f;--gn:#2f855a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2129;--tx:#e8ecf1;--mu:#93a0af;--bd:#2c3540;--pr:#2dd4bf;--pr2:#16302d;--rd:#f28b82;--am:#f0b429;--gn:#68d391}}
@@ -301,7 +301,7 @@ document.addEventListener('touchstart',e=>{const tr=e.target.closest('tr[data-ct
  touchTimer=setTimeout(()=>{if(moved)return;const[ty,id]=tr.dataset.ctx.split(':');ctxMenu({clientX:t.clientX,clientY:t.clientY},ty,+id);if(navigator.vibrate)navigator.vibrate(10)},550)},{passive:true});
 document.addEventListener('touchmove',()=>{moved=1;clearTimeout(touchTimer)},{passive:true});
 document.addEventListener('touchend',()=>clearTimeout(touchTimer));
-function filterRows(inpSel,scope){const t=norm($(inpSel).value);document.querySelectorAll((scope||'#app')+' tr[data-s]').forEach(tr=>{tr.style.display=(!t||tr.dataset.s.includes(t))?'':'none'})}
+function filterRows(inpSel,scope){const input=$(inpSel);if(!input)return;const t=norm(input.value);document.querySelectorAll((scope||'#app')+' tr').forEach(tr=>{if(!tr.querySelector('td'))return;const searchable=norm((tr.dataset.s||'')+' '+tr.textContent);tr.style.display=(!t||searchable.includes(t))?'':'none'})}
 function delCust(id){if(role!='admin')return alert('Only the admin can delete records.');if(savBal(id)>0)return alert(`This client still has savings of ${fmtN(savBal(id))}. Withdraw it first, then delete the customer.`);const n=S.l.filter(l=>l.c==id).length;if(!confirm(n?`Delete this customer and their ${n} loan(s)? This cannot be undone.`:'Delete this customer?'))return;S.l=S.l.filter(l=>l.c!=id);S.c=S.c.filter(c=>c.id!=id);S.savings=(S.savings||[]).filter(t=>t.c!=id);save();render()}
 function delLoan(id){if(role!='admin')return alert('Only the admin can delete records.');if(!confirm('Delete this loan and its payment history? This cannot be undone.'))return;S.l=S.l.filter(l=>l.id!=id);save();render()}
 function colForm(id){const c=S.collectors.find(x=>x.id==id)||{};
@@ -345,11 +345,12 @@ function dash(){
  <div class="card"><h2>Portfolio status</h2>${Object.entries(stc).map(([s,n])=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><span>${s}</span><b>${n}</b></div><div style="height:10px;background:var(--bd);border-radius:6px"><div style="height:10px;width:${n/tot*100}%;background:${cols[s]};border-radius:6px"></div></div></div>`).join('')||'<p class="mu">No loans yet.</p>'}</div></div>
  <div class="card"><h2>Overdue loans</h2>${table(['Client','Phone','Days','Balance'],ls.filter(l=>l.st=='Overdue').sort((a,b)=>b.od-a.od).map(l=>[esc(l.cn),esc(l.ph),`<b style="color:var(--rd)">${l.od}</b>`,fmt(l.bal)]),'No overdue loans 🎉')}</div>`;
 }
+function filterCollectorCards(value){const q=norm(value);document.querySelectorAll("#collectorResults [data-collector-search]").forEach(el=>{el.hidden=!!q&&!el.dataset.collectorSearch.includes(q)})}
 function collectV(){
- const cs=S.c.filter(c=>!collectQ||norm(c.name+c.phone).includes(norm(collectQ)));
+ const cs=S.c;
  const blocks=cs.map(c=>{const ls=L().filter(l=>l.c==c.id&&l.st!='Written off'&&l.st!='Paid');if(!ls.length)return '';
-  return `<div class="card"><h2 style="display:flex;align-items:center;gap:10px">${c.photo?`<img src="${c.photo}" style="width:40px;height:40px;object-fit:cover;border-radius:8px">`:''}${esc(c.name)} <span class="mu" style="font-weight:400">${esc(c.phone)}</span></h2>${table(['Start','Balance','Due','Status',''],ls.map(l=>[l.d,fmt(l.bal),l.due,tag(l.st),`<button class="btn s" onclick="payForm(${l.id})">Record payment</button>`]))}</div>`}).filter(Boolean);
- return `<div class="card"><label>Search client</label><input id="cq" value="${esc(collectQ)}" placeholder="Name or phone…" oninput="collectQ=this.value;render()" autofocus></div>${blocks.join('')||'<p class="mu">No matching clients with an open balance.</p>'}`;
+  return `<div class="card" data-collector-search="${esc(norm(c.name+" "+c.phone+" "+(c.acct||"")))}"><h2 style="display:flex;align-items:center;gap:10px">${c.photo?`<img src="${c.photo}" style="width:40px;height:40px;object-fit:cover;border-radius:8px">`:''}${esc(c.name)} <span class="mu" style="font-weight:400">${esc(c.phone)}</span></h2>${table(['Start','Balance','Due','Status',''],ls.map(l=>[l.d,fmt(l.bal),l.due,tag(l.st),`<button class="btn s" onclick="payForm(${l.id})">Record payment</button>`]))}</div>`}).filter(Boolean);
+ return `<div class="card"><label>Search client</label><input id="cq" value="${esc(collectQ)}" placeholder="Name or phone…" oninput="collectQ=this.value;filterCollectorCards(this.value)" autofocus></div><div id="collectorResults">${blocks.join('')||'<p class="mu">No clients with an open balance.</p>'}</div>`;
 }
 function pad(n,w){return String(n).padStart(w,'0')}
 function acctNew(c){let n=S.cfg.acctN||1,no;do{no='SAV-'+pad(n,5);n++}while(S.c.some(x=>x.acct==no));S.cfg.acctN=n;c.acct=no;return no}
@@ -805,5 +806,6 @@ $('#q').addEventListener('input',e=>{
  box.innerHTML=out.slice(0,8).join('')||'<div class="mu">No match</div>';box.style.display='block'});
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#sr').style.display='none'});
 render();cloudStart();loadDirHandle();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(e=>console.warn("PWA registration failed",e)));
 (async()=>{try{DL=await claude.use('downloads')}catch(e){}})();
 </script></body></html>
