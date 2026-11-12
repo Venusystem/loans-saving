@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loan Manager</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#1b2430;--mu:#66707d;--bd:#e2e5ea;--pr:#0f766e;--pr2:#e6f4f2;--rd:#c0392b;--am:#b7791f;--gn:#2f855a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2129;--tx:#e8ecf1;--mu:#93a0af;--bd:#2c3540;--pr:#2dd4bf;--pr2:#16302d;--rd:#f28b82;--am:#f0b429;--gn:#68d391}}
+:root[data-theme="dark"]{--bg:#12161b;--card:#1b2129;--tx:#e8ecf1;--mu:#93a0af;--bd:#2c3540;--pr:#2dd4bf;--pr2:#16302d;--rd:#f28b82;--am:#f0b429;--gn:#68d391}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header img{height:32px;border-radius:6px}.brand{font-weight:700;font-size:17px}
+.search{flex:1;min-width:180px;position:relative}
+input,select,button,textarea{font:inherit;color:var(--tx)}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+#sr{position:absolute;left:0;right:0;top:40px;background:var(--card);border:1px solid var(--bd);border-radius:8px;max-height:300px;overflow:auto;display:none;box-shadow:0 8px 24px #0003}
+#sr div{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}#sr div:hover{background:var(--pr2)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--bd)}
+nav button{border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;color:var(--mu)}
+nav button.on{background:var(--pr2);color:var(--pr);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.kpi small{color:var(--mu);display:block}.kpi b{font-size:19px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.btn{background:var(--pr);color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block}
+:root[data-theme="dark"] .btn{color:#062b27}
+.btn.g{background:none;color:var(--pr);border:1px solid var(--bd)}.btn.s{padding:4px 9px;font-size:13px}.btn.d{background:var(--rd);color:#fff}
+.tw{overflow:auto;max-height:65vh}table{width:100%;border-collapse:collapse;font-size:14px}
+@media print{.tw{overflow:visible!important;max-height:none!important}}
+.noprint{}
+@media print{header,nav,.bar,.noprint,.btn{display:none!important}body{background:#fff}main{padding:0;max-width:100%}.card{border:none;box-shadow:none;padding:0;margin:0}}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd);white-space:nowrap}th{color:var(--mu);font-weight:600;font-size:12px;text-transform:uppercase}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;background:var(--pr2);color:var(--pr)}
+.tag.Overdue{background:#c0392b22;color:var(--rd)}.tag.Paid{background:#2f855a22;color:var(--gn)}.tag.Written{background:#66707d33;color:var(--mu)}
+.tag.Fix{background:#b7791f22;color:var(--am)}
+.tag.Topped{background:#0f766e22;color:var(--pr)}
+tr[data-ctx]{cursor:pointer}tr[data-ctx]:hover td{background:var(--pr2)}
+.ctxm{position:fixed;background:var(--card);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 24px #0004;z-index:50;min-width:170px;overflow:hidden;padding:4px}
+.ctxm div{padding:9px 14px;cursor:pointer;font-size:14px;border-radius:6px}.ctxm div:hover{background:var(--pr2)}.ctxm div.d{color:var(--rd)}
+.hint{font-size:12px;color:var(--mu)}
+.gate{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.gate .card{max-width:340px;width:100%}
+body.gated header,body.gated nav,body.gated main{display:none}
+#rcpt{display:none}
+@media print{
+ body.printrec>*:not(#rcpt){display:none!important}
+ body.printrec #rcpt{display:block!important;max-width:380px;margin:0 auto;font:13px/1.5 system-ui;color:#111}
+}
+.amt{display:inline-block}
+body.priv .amt{filter:blur(7px);user-select:none;transition:filter .15s}
+body.priv .amt:hover{filter:blur(3px)}
+@media print{.amt{filter:none!important}}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);width:min(440px,94vw);padding:16px}
+dialog::backdrop{background:#0008}label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+h2{margin:0 0 10px;font-size:17px}.mu{color:var(--mu)}svg text{fill:var(--mu);font-size:11px}
+</style></head><body>
+<div id="saveErr" style="display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:var(--rd);color:#fff;padding:10px 14px;text-align:center;font-weight:600;align-items:center;justify-content:center;gap:10px">⚠ Not saving — your browser's storage is full. Nothing new is being kept. <button class="btn s" style="background:#fff;color:var(--rd)" onclick="go('set');dl('emergency-backup-'+today()+'.json',JSON.stringify(S))">Download backup now</button></div>
+<div id="gate" class="gate"></div>
+<div id="rcpt"></div>
+<header><img id="lg" alt="" hidden><span class="brand" id="bn"></span>
+<button id="pv" class="btn s g" style="margin-left:auto" onclick="togglePriv()">👁 Show amounts</button>
+<button id="lo" class="btn s g" onclick="logout()">Logout</button>
+<div class="search"><input id="q" placeholder="Search name, phone, account or receipt no…" autocomplete="off"><div id="sr"></div></div></header>
+<nav id="nav"></nav><main id="app"></main>
+<dialog id="dlg"></dialog>
+<script>
+const $=s=>document.querySelector(s);
+let S={c:[],l:[],collectors:[],cfg:{name:'My Lending Co.',addr:'',phone:'',cur:'UGX',pen:5,logo:'',pin:''},n:1},tab='dash',sel=null,DL=null,role=null,curUser=null,collectQ='',rFrom=null,rTo=null,rCol='all',stmtFrom=null,stmtTo=null,selLoan=null,selInv=null,selSav=null;
+const inRange=d=>(!stmtFrom||d>=stmtFrom)&&(!stmtTo||d<=stmtTo);
+try{const r=localStorage.getItem('loanapp');if(r)S=JSON.parse(r)}catch(e){}
+S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();
+let saveFailed=false;
+const save=()=>{try{localStorage.setItem('loanapp',JSON.stringify(S));if(saveFailed){saveFailed=false;$('#saveErr').style.display='none'}}catch(e){saveFailed=true;$('#saveErr').style.display='flex'}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>`<span class="amt">${S.cfg.cur} ${Math.round(n).toLocaleString()}</span>`;
+const fmtN=n=>`${S.cfg.cur} ${Math.round(n).toLocaleString()}`;
+let priv=true;
+function applyPriv(){document.body.classList.toggle('priv',priv&&role!='collector'&&role!='teller'&&role!='supervisor');const b=$('#pv');if(b)b.textContent=priv?'👁 Show amounts':'🙈 Hide amounts'}
+function togglePriv(){
+ if(priv){if(S.cfg.pin){const p=prompt('Enter admin PIN to reveal amounts:');if(p===null)return;if(p!==S.cfg.pin){alert('Incorrect PIN');return}}priv=false}
+ else priv=true;
+ applyPriv()}
+function boot(){if(!S.cfg.pin)showSetup();else showLogin()}
+function showSetup(){document.body.classList.add('gated');const g=$('#gate');g.style.display='flex';
+ g.innerHTML=`<div class="card">${S.cfg.logo?`<div style="text-align:center;margin-bottom:10px"><img src="${S.cfg.logo}" style="max-height:110px;max-width:100%"></div>`:''}<h2>Set up admin PIN</h2><p class="mu">Create a PIN to protect this app. You'll log in with the name Admin (changeable later in Settings) and this PIN, and use the PIN to reveal amounts.</p>
+ <label>New PIN</label><input id="sp1" type="password" inputmode="numeric"><label>Confirm PIN</label><input id="sp2" type="password" inputmode="numeric">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="doSetup()">Save & continue</button></div><p class="hint" id="serr" style="color:var(--rd)"></p></div>`}
+function doSetup(){const a=$('#sp1').value,b=$('#sp2').value;if(a.length<4)return $('#serr').textContent='PIN must be at least 4 digits';if(a!==b)return $('#serr').textContent='PINs do not match';S.cfg.pin=a;save();showLogin()}
+function nameTaken(n,kind,id){n=String(n).trim().toLowerCase();
+ if(kind!='admin'&&(S.cfg.adminName||'Admin').trim().toLowerCase()==n)return true;
+ if(S.collectors.some(c=>c.name.trim().toLowerCase()==n&&!(kind=='c'&&c.id==id)))return true;
+ if((S.tellers||[]).some(c=>c.name.trim().toLowerCase()==n&&!(kind=='t'&&c.id==id)))return true;if((S.supervisors||[]).some(c=>c.name.trim().toLowerCase()==n&&!(kind=='s'&&c.id==id)))return true;return false}
+function showLogin(){document.body.classList.add('gated');const g=$('#gate');g.style.display='flex';
+ g.innerHTML=`<div class="card">${S.cfg.logo?`<div style="text-align:center;margin-bottom:10px"><img src="${S.cfg.logo}" style="max-height:110px;max-width:100%"></div>`:''}<h2 style="text-align:center">${esc(S.cfg.name||'Loan Manager')}</h2>
+ <label>Name</label><input id="lname" autocomplete="off" autocapitalize="none" onkeydown="if(event.key=='Enter')$('#lpin').focus()">
+ <label>PIN</label><input id="lpin" type="password" inputmode="numeric" onkeydown="if(event.key=='Enter')doLogin()">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="doLogin()">Login</button></div><p class="hint" id="lerr" style="color:var(--rd)"></p></div>`;
+ setTimeout(()=>{const x=$('#lname');if(x)x.focus()},50)}
+function doLogin(){const n=$('#lname').value.trim().toLowerCase(),p=$('#lpin').value,hits=[];
+ if(!n||!p)return $('#lerr').textContent='Enter your name and PIN';
+ const an=(S.cfg.adminName||'Admin').trim();
+ if(n==an.toLowerCase()&&p===S.cfg.pin)hits.push({r:'admin',u:{name:an}});
+ S.collectors.forEach(c=>{if(c.name.trim().toLowerCase()==n&&c.pin===p)hits.push({r:'collector',u:c})});
+ (S.tellers||[]).forEach(c=>{if(c.name.trim().toLowerCase()==n&&c.pin===p)hits.push({r:'teller',u:c})});
+ (S.supervisors||[]).forEach(c=>{if(c.name.trim().toLowerCase()==n&&c.pin===p)hits.push({r:'supervisor',u:c})});
+ if(!hits.length)return $('#lerr').textContent='Name or PIN is incorrect';
+ if(hits.length>1)return $('#lerr').textContent='Two accounts share this name and PIN — ask the admin to give one a different name.';
+ role=hits[0].r;curUser=hits[0].u;
+ priv=true;document.body.classList.remove('gated');$('#gate').style.display='none';tab=role=='collector'?'collect':role=='teller'?'sav':'dash';sel=null;render()}
+function logout(){role=null;curUser=null;showLogin()}
+const today=()=>new Date().toISOString().slice(0,10);
+const addM=(d,m)=>{const x=new Date(d);if(isNaN(x.getTime()))return null;x.setMonth(x.getMonth()+m);return x.toISOString().slice(0,10)};
+const dd=(a,b)=>Math.floor((new Date(a)-new Date(b))/864e5);
+const cust=id=>S.c.find(c=>c.id==id)||{name:'?',phone:''};
+const topInto=l=>l.top?(Array.isArray(l.top.into)?l.top.into:[l.top.into]):[];
+const WA_DEFAULT="Hello {name}, this is a reminder from {company}. Your loan balance of {balance} was due on {due}. Kindly make your payment at your earliest convenience. Thank you.";
+function waPhone(ph){let d=(ph||'').replace(/\D/g,'');if(!d)return null;const cc=S.cfg.waCc||'256';if(d.startsWith('0'))d=cc+d.slice(1);else if(!d.startsWith(cc))d=cc+d;return d}
+function waMsg(l){const c=cust(l.c);return(S.cfg.waTemplate||WA_DEFAULT)
+ .replace(/{name}/g,c.name).replace(/{company}/g,S.cfg.name).replace(/{balance}/g,fmtN(l.bal)).replace(/{due}/g,l.due).replace(/{days}/g,l.od||0)}
+function waHref(phone,msg){const d=waPhone(phone);return d?`https://wa.me/${d}?text=${encodeURIComponent(msg)}`:null}
+function waOpen(phone,msg){const href=waHref(phone,msg);if(!href){alert('No phone number on file for this client.');return}
+ location.href=href}
+function waRemind(id){const l=L().find(x=>x.id==id);waOpen(l.ph,waMsg(l))}
+function waRemindStmt(custId){const ls=L().filter(x=>x.c==custId&&(x.st=='Overdue'||x.st=='Active')).sort((a,b)=>b.od-a.od);
+ if(!ls.length)return alert('No outstanding balance to remind this client about.');waRemind(ls[0].id)}
+function findReceipt(rc,skipLoan,skipIdx){
+ rc=(rc||'').trim().toLowerCase();if(!rc)return null;
+ for(const l of S.l)for(let i=0;i<l.pay.length;i++){
+  if(l.id==skipLoan&&i==skipIdx)continue;
+  if((l.pay[i].rc||'').trim().toLowerCase()==rc)return{loan:l,p:l.pay[i],label:'loan #'+l.id};
+ }
+ for(const t of (S.savings||[])){if((t.rc||'').trim().toLowerCase()==rc)return{loan:{id:0,c:t.c},p:t,label:'a savings '+t.type}}
+ return null;
+}
+function calc(l){
+ const due=addM(l.d,l.t),hasDate=!!due;
+ const interest=l.p*l.r/100*l.t,base=l.p+interest,paid=l.pay.reduce((s,x)=>s+x.a,0);
+ if(l.top)return{interest,due:due||'—',base,paid,od:0,pen:0,bal:0,st:'Topped up',last:l.pay.length?l.pay.map(x=>x.dt).sort().pop():null,hasDate,lateSettled:false};
+ const unpaid=Math.max(0,base-paid);
+ const od=(l.wo||!hasDate||unpaid<=0)?0:Math.max(0,dd(today(),due));
+ const pen=od>0?unpaid*l.pr/100*od/30:0,bal=Math.max(0,base+pen-paid);
+ const last=l.pay.length?l.pay.map(x=>x.dt).sort().pop():null;
+ const st=l.wo?'Written off':!hasDate?'Fix date':bal<1?'Paid':od>0?'Overdue':'Active';
+ return{interest,due:due||'—',base,paid,od,pen,bal,st,last,hasDate,lateSettled:st=='Paid'&&last>due};
+}
+const L=()=>S.l.map(l=>({...l,...calc(l),cn:cust(l.c).name,ph:cust(l.c).phone}));
+function icalc(inv){
+ const paid=inv.pay.reduce((s,x)=>s+x.a,0),totalCommit=inv.monthly*inv.term,due=addM(inv.start,inv.term);
+ if(inv.type=='bundled'){const liability=Math.max(0,totalCommit-paid);return{paid,totalCommit,remainMonthly:liability,principalOwed:0,liability,due:due||'—',bundled:true}}
+ const remainMonthly=Math.max(0,totalCommit-paid),principalOwed=inv.principalRepaid?0:inv.principal;
+ return{paid,totalCommit,remainMonthly,principalOwed,liability:remainMonthly+principalOwed,due:due||'—',bundled:false};
+}
+const IL=()=>(S.investors||[]).map(i=>({...i,...icalc(i)}));
+function capV(){
+ const inv=IL(),totalLiab=inv.reduce((s,i)=>s+i.liability,0);
+ return `<p class="mu">Money you've borrowed to fund lending — this is a liability, kept separate from what borrowers owe you.</p>
+ <div class="bar"><button class="btn" onclick="invForm()">+ New capital source</button><button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('investors',[['Name','Principal','Monthly','Term','Start','Paid','Remaining monthly','Principal owed','Total liability'],...IL().map(i=>[i.name,i.principal,i.monthly,i.term,i.start,Math.round(i.paid),Math.round(i.remainMonthly),Math.round(i.principalOwed),Math.round(i.liability)])])">Excel (CSV)</button></div>
+ <div class="card"><h2>Total owed to investors</h2><b style="font-size:20px">${fmt(totalLiab)}</b></div>
+ <div class="card">${table(['Name','Structure','Principal','Monthly × Term','Paid','Remaining','Liability now',''],inv.map(i=>[esc(i.name),i.bundled?'Bundled (monthly repays all)':'Separate (principal at end)',fmt(i.principal),`${fmt(i.monthly)} × ${i.term}`,fmt(i.paid),fmt(i.remainMonthly)+(i.bundled?'':i.principalRepaid?' + principal repaid':' + '+fmtN(i.principalOwed)+' principal'),`<b>${fmt(i.liability)}</b>`,
+ `${i.remainMonthly>0?`<button class="btn s" onclick="invPayForm(${i.id})">Record payment</button> `:''}${(!i.bundled&&!i.principalRepaid)?`<button class="btn s g" onclick="invRepay(${i.id})">Repay principal</button> `:''}${i.pay.length?`<button class="btn s g" onclick="invPayList(${i.id})">View payments</button> `:''}<button class="btn s g" onclick="go('cstmt',${i.id})">Statement</button> <button class="btn s g" onclick="invForm(${i.id})">Edit</button> <button class="btn s d" onclick="invDel(${i.id})">Delete</button>`]),'No capital sources yet.')}</div>`;
+}
+function invForm(id){const i=S.investors.find(x=>x.id==id)||{};const ty=i.type||'separate';
+ open(`<h2>${id?'Edit':'New'} capital source</h2><label>Investor / lender name</label><input id="f1" value="${esc(i.name)}"><label>Principal received (${esc(S.cfg.cur)})</label><input id="f2" type="number" min="0" value="${i.principal||''}">
+ <label>Agreed monthly payment</label><input id="f3" type="number" min="0" value="${i.monthly||''}"><label>Term (months)</label><input id="f4" type="number" min="1" value="${i.term||12}"><label>Start date</label><input id="f5" type="date" value="${i.start||today()}">
+ <label>How does repayment work?</label><select id="f6">
+ <option value="separate" ${ty=='separate'?'selected':''}>Separate — monthly payment is a fee; I return the full principal at the end</option>
+ <option value="bundled" ${ty=='bundled'?'selected':''}>Bundled — the monthly payments themselves fully repay it (principal included); nothing extra at the end</option></select>
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="invSave(${id||0})">Save</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function invSave(id){const n=$('#f1').value.trim(),p=+$('#f2').value,m=+$('#f3').value,t=+$('#f4').value,s=$('#f5').value,ty=$('#f6').value;
+ if(!n||!(p>0)||!(t>0)||!s)return alert('Enter a name, principal, term and start date');
+ const o={name:n,principal:p,monthly:m,term:t,start:s,type:ty};if(id)Object.assign(S.investors.find(x=>x.id==id),o);else S.investors.push({id:S.n++,...o,pay:[],principalRepaid:null});
+ save();dlg.close();render()}
+function invDel(id){if(!confirm('Delete this capital source record?'))return;S.investors=S.investors.filter(x=>x.id!=id);save();render()}
+function invPayForm(id){const i=IL().find(x=>x.id==id);
+ open(`<h2>Payment to ${esc(i.name)}</h2><p class="mu">Still owed on the monthly commitment: ${fmt(i.remainMonthly)}</p><label>Amount</label><input id="f1" type="number" value="${Math.min(i.monthly,i.remainMonthly)||i.remainMonthly}"><label>Date</label><input id="f2" type="date" value="${today()}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="invPaySave(${id})">Record</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function invPaySave(id){const a=+$('#f1').value;if(!(a>0))return;S.investors.find(x=>x.id==id).pay.push({a,dt:$('#f2').value});save();dlg.close();render()}
+function invRepay(id){const i=S.investors.find(x=>x.id==id);
+ open(`<h2>Repay principal — ${esc(i.name)}</h2><p class="mu">This is for the full, one-time, end-of-term lump sum only — not a regular monthly payment. If you're logging a monthly payment, close this and use "Record payment" instead.</p>
+ <label>Amount repaid</label><input id="f1" type="number" value="${i.principal}"><label>Date</label><input id="f2" type="date" value="${today()}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="invRepaySave(${id})">Confirm full repayment</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function invRepaySave(id){const i=S.investors.find(x=>x.id==id),a=+$('#f1').value;if(!(a>0))return;
+ if(a!=i.principal&&!confirm(`You entered ${fmtN(a)}, but the agreed principal is ${fmtN(i.principal)}. This marks the ENTIRE principal as fully repaid regardless of the amount entered — proceed only if this really closes it out. Continue?`))return;
+ i.principalRepaid={amt:a,date:$('#f2').value};save();dlg.close();render()}
+function invPayList(id){const i=S.investors.find(x=>x.id==id);
+ open(`<h2>Payments to ${esc(i.name)}</h2>${table(['Date','Amount',''],i.pay.map((p,idx)=>[
+  `<input value="${esc(p.dt)}" type="date" style="min-width:130px" onchange="editInvPay(${id},${idx},'dt',this.value)">`,
+  `<input value="${p.a}" type="number" style="width:100px" onchange="editInvPay(${id},${idx},'a',+this.value)">`,
+  `<button class="btn s d" onclick="delInvPay(${id},${idx})">✕</button>`
+ ]))}<div class="bar" style="margin-top:12px"><button class="btn g" onclick="dlg.close()">Close</button></div>`)}
+function editInvPay(id,idx,k,v){S.investors.find(x=>x.id==id).pay[idx][k]=v;save()}
+function delInvPay(id,idx){if(!confirm('Delete this payment entry?'))return;S.investors.find(x=>x.id==id).pay.splice(idx,1);save();dlg.close();render()}
+function invStmtHtml(id){const i=IL().find(x=>x.id==id),g=S.cfg;if(!i)return '<p class="mu">Not found.</p>';
+ const rows=[...i.pay.slice().sort((a,b)=>a.dt.localeCompare(b.dt)).map(p=>[p.dt,'Payment to '+esc(i.name),fmt(p.a)])];
+ if(i.principalRepaid)rows.push([i.principalRepaid.date,'Principal repaid in full',fmt(i.principalRepaid.amt)]);
+ return `<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">${g.logo?`<img src="${g.logo}" style="height:48px">`:''}<div><b style="font-size:18px">${esc(g.name)}</b><br><span class="mu">${esc(g.addr)} ${esc(g.phone)}</span></div></div>
+ <h2>Statement of Payments — ${esc(i.name)}</h2><p class="mu">Date ${today()}</p>
+ <p class="mu">Capital received: ${fmt(i.principal)} on ${i.start} · Agreed: ${fmt(i.monthly)}/mo × ${i.term} · Structure: ${i.bundled?'Bundled (monthly repays all)':'Separate (principal returned at end)'}</p>
+ ${table(['Date','Description','Amount'],rows,'No payments recorded yet.')}
+ <p style="border-top:1px solid var(--bd);padding-top:8px"><b>Total paid to date: ${fmt(i.paid+(i.principalRepaid?i.principalRepaid.amt:0))} · Still owed: ${fmt(i.liability)}</b></p>`;
+}
+function invStmtV(){const i=IL().find(x=>x.id==selInv);if(!i)return '<p class="mu">Select a capital source from the Capital tab.</p>';
+ return `<div class="bar"><button class="btn g" onclick="go('cap')">← Back to Capital</button><button class="btn g" onclick="window.print()">Print (A4)</button><button class="btn" onclick="invStmtDl(${i.id})">Save PDF-ready file</button><button class="btn g" onclick="invStmtCsv(${i.id})">Excel (CSV)</button></div><div class="card">${invStmtHtml(i.id)}</div>`;
+}
+function invStmtDl(id){const i=S.investors.find(x=>x.id==id);dl(`statement-${i.name.replace(/\W+/g,'_')}.html`,`<!DOCTYPE html><meta charset="utf-8"><title>Statement</title><style>@page{size:A4;margin:18mm}body{font:14px system-ui;max-width:800px;margin:24px auto;color:#111}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px;border-bottom:1px solid #ccc}.mu{color:#666}</style>${invStmtHtml(id)}<p class="mu">Open this file and use Print → Save as PDF, or print directly.</p>`)}
+function invStmtCsv(id){const i=IL().find(x=>x.id==id);const rows=[['Date','Description','Amount']];i.pay.forEach(p=>rows.push([p.dt,'Payment',p.a]));if(i.principalRepaid)rows.push([i.principalRepaid.date,'Principal repaid',i.principalRepaid.amt]);csvDl('statement-'+i.name.replace(/\W+/g,'_'),rows)}
+let calcV_=null;
+function calcV(){
+ const v=calcV_||{p:1000000,r:10,t:1,d:today()};
+ const s=schedule(v);
+ return `<p class="hint">Work out interest and a payment schedule before creating a loan — this doesn't save anything until you choose to.</p>
+ <div class="card"><div class="two">
+ <div><label>Principal (${esc(S.cfg.cur)})</label><input id="cv1" type="number" min="0" value="${v.p}" oninput="calcV_={p:+$('#cv1').value||0,r:+$('#cv2').value||0,t:+$('#cv3').value||1,d:$('#cv4').value||today()};render()">
+ <label>Interest rate % per month</label><input id="cv2" type="number" step="0.01" value="${v.r}" oninput="calcV_={p:+$('#cv1').value||0,r:+$('#cv2').value||0,t:+$('#cv3').value||1,d:$('#cv4').value||today()};render()"></div>
+ <div><label>Term (months)</label><input id="cv3" type="number" min="1" value="${v.t}" oninput="calcV_={p:+$('#cv1').value||0,r:+$('#cv2').value||0,t:+$('#cv3').value||1,d:$('#cv4').value||today()};render()">
+ <label>Start date</label><input id="cv4" type="date" value="${v.d}" onchange="calcV_={p:+$('#cv1').value||0,r:+$('#cv2').value||0,t:+$('#cv3').value||1,d:$('#cv4').value||today()};render()"></div></div>
+ <div class="grid" style="margin-top:12px"><div class="card kpi" style="margin:0"><small>Interest</small><b>${fmt(s.interest)}</b></div><div class="card kpi" style="margin:0"><small>Total repayable</small><b>${fmt(s.base)}</b></div><div class="card kpi" style="margin:0"><small>Installment / month</small><b>${fmt(s.installment)}</b></div></div>
+ ${table(['#','Due date','Amount'],s.rows.map(r=>[r.n,r.due,fmt(r.amt)]))}
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="loanForm(null,null,{p:${v.p},r:${v.r},t:${v.t},d:'${v.d}'})">Create this as a new loan</button></div></div>`;
+}
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const tag=s=>`<span class="tag ${s.split(' ')[0]}">${s}</span>`;
+// ---- downloads
+async function dl(name,data){
+ if(!DL){const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));a.download=name;document.body.appendChild(a);a.click();a.remove();return}
+ try{await DL.save({filename:name,data})}catch(e){if(e.code!='declined')alert('Could not save: '+(e.message||e.code))}
+}
+const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+const csvDl=(n,rows)=>dl(n+'.csv','\ufeff'+csv(rows));
+function table(h,rows,empty='Nothing here yet.',attrs){return rows.length?`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map((r,i)=>`<tr ${attrs?attrs[i]:''}>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table></div>`:`<p class="mu">${empty}</p>`}
+// ---- context menu (right-click / long-press) + row filter
+function ctxMenu(e,type,id){e.preventDefault&&e.preventDefault();closeCtx();
+ const items=type=='cust'?[
+  {l:'Edit customer',f:`custForm(${id})`},{l:'View statement',f:`go('stmt',${id})`},{l:'New loan for client',f:`loanForm(${id})`},
+  {l:'Send WhatsApp reminder',f:`waRemindStmt(${id})`},
+  ...(role=='admin'?[{l:'Delete customer',f:`delCust(${id})`,d:1}]:[])
+ ]:(()=>{const l=L().find(x=>x.id==id)||{};const a=[{l:'View statement',f:`go('stmt',${l.c})`},{l:'Edit loan',f:`loanForm(null,${id})`}];
+  if(l.st!='Written off'&&l.st!='Paid'&&l.st!='Topped up')a.push({l:'Record payment',f:`payForm(${id})`},{l:'Top up (new rate)',f:`topupForm(${id})`});
+  if(l.st=='Active'||l.st=='Overdue')a.push({l:'Send WhatsApp reminder',f:`waRemind(${id})`},{l:'View / print schedule',f:`go('sched',${id})`},{l:'Edit schedule (auto/manual)',f:`schedForm(${id})`});
+  if(l.pay&&l.pay.length)a.push({l:'View / edit payments',f:`payList(${id})`});
+  if(l.st=='Overdue')a.push({l:'Write off (bad loan)',f:`wo(${id},1)`});
+  if(l.wo)a.push({l:'Reinstate loan',f:`wo(${id},0)`});
+  if(role=='admin')a.push({l:'Delete loan',f:`delLoan(${id})`,d:1});return a})();
+ const m=document.createElement('div');m.className='ctxm';m.id='ctxm';
+ m.innerHTML=items.map(it=>`<div ${it.d?'class="d"':''} onclick="closeCtx();${it.f}">${it.l}</div>`).join('');
+ document.body.appendChild(m);const x=e.clientX||0,y=e.clientY||0;
+ m.style.left=Math.min(x,innerWidth-m.offsetWidth-8)+'px';m.style.top=Math.min(y,innerHeight-m.offsetHeight-8)+'px'}
+function closeCtx(){const m=document.getElementById('ctxm');if(m)m.remove()}
+document.addEventListener('click',closeCtx);document.addEventListener('scroll',closeCtx,true);
+document.addEventListener('contextmenu',e=>{const tr=e.target.closest('tr[data-ctx]');if(tr){e.preventDefault();const[t,id]=tr.dataset.ctx.split(':');ctxMenu(e,t,+id)}});
+let touchTimer,moved;
+document.addEventListener('touchstart',e=>{const tr=e.target.closest('tr[data-ctx]');if(!tr)return;moved=0;const t=e.touches[0];
+ touchTimer=setTimeout(()=>{if(moved)return;const[ty,id]=tr.dataset.ctx.split(':');ctxMenu({clientX:t.clientX,clientY:t.clientY},ty,+id);if(navigator.vibrate)navigator.vibrate(10)},550)},{passive:true});
+document.addEventListener('touchmove',()=>{moved=1;clearTimeout(touchTimer)},{passive:true});
+document.addEventListener('touchend',()=>clearTimeout(touchTimer));
+function filterRows(inpSel,scope){const t=norm($(inpSel).value);document.querySelectorAll((scope||'#app')+' tr[data-s]').forEach(tr=>{tr.style.display=(!t||tr.dataset.s.includes(t))?'':'none'})}
+function delCust(id){if(role!='admin')return alert('Only the admin can delete records.');if(savBal(id)>0)return alert(`This client still has savings of ${fmtN(savBal(id))}. Withdraw it first, then delete the customer.`);const n=S.l.filter(l=>l.c==id).length;if(!confirm(n?`Delete this customer and their ${n} loan(s)? This cannot be undone.`:'Delete this customer?'))return;S.l=S.l.filter(l=>l.c!=id);S.c=S.c.filter(c=>c.id!=id);S.savings=(S.savings||[]).filter(t=>t.c!=id);save();render()}
+function delLoan(id){if(role!='admin')return alert('Only the admin can delete records.');if(!confirm('Delete this loan and its payment history? This cannot be undone.'))return;S.l=S.l.filter(l=>l.id!=id);save();render()}
+function colForm(id){const c=S.collectors.find(x=>x.id==id)||{};
+ open(`<h2>${id?'Edit':'New'} collector</h2><label>Name</label><input id="f1" value="${esc(c.name)}"><label>PIN (4+ digits)</label><input id="f2" value="${esc(c.pin)}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="colSave(${id||0})">Save</button>${id?`<button class="btn d" onclick="colDel(${id})">Delete</button>`:''}<button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function colSave(id){const n=$('#f1').value.trim(),p=$('#f2').value.trim();if(!n||p.length<4)return alert('Enter a name and a PIN of at least 4 digits');if(nameTaken(n,'c',id))return alert(`The name "${n}" is already used by another account. Every login name must be different.`);
+ if(id)Object.assign(S.collectors.find(x=>x.id==id),{name:n,pin:p});else S.collectors.push({id:S.n++,name:n,pin:p});save();dlg.close();render()}
+function colDel(id){if(!confirm('Delete this collector account? Their past payment records are kept.'))return;S.collectors=S.collectors.filter(x=>x.id!=id);save();dlg.close();render()}
+// ---- views
+const TABS={dash:'Dashboard',cust:'Customers',loans:'Loans',stmt:'Statement',rep:'Good Clients',credit:'Credit Scores',recon:'Daily Collections',sav:'Savings',exp:'Expenses',rem:'Reminders',cap:'Capital',calc:'Calculator',set:'Settings'};
+const TABS_C={collect:'Collect Payment',csav:'Savings',mycol:'My Collections'};
+const TABS_T={sav:'Savings',till:'My Till'};
+const TABS_S=Object.fromEntries(Object.entries(TABS).filter(([k])=>k!='cap'&&k!='set'));
+function head(){
+ $('#bn').textContent=S.cfg.name;const lg=$('#lg');lg.hidden=!S.cfg.logo;if(S.cfg.logo)lg.src=S.cfg.logo;
+ const T=role=='collector'?TABS_C:role=='teller'?TABS_T:role=='supervisor'?TABS_S:TABS;
+ $('#nav').innerHTML=Object.entries(T).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${v}</button>`).join('');
+ $('#pv').style.display=(role=='collector'||role=='teller'||role=='supervisor')?'none':'';
+ document.querySelector('.search').style.display=(role=='collector'||role=='teller')?'none':'';
+ $('#lo').textContent=curUser?`Logout (${curUser.name})`:'Logout';
+ applyPriv();
+}
+function go(t,id){tab=t;if(id){if(t=='sched')selLoan=id;else if(t=='cstmt')selInv=id;else if(t=='sstmt')selSav=id;else sel=id}render();scrollTo(0,0)}
+function render(){const ok=role=='collector'?['collect','csav','mycol']:role=='teller'?['sav','sstmt','till']:role=='supervisor'?['dash','cust','loans','stmt','rep','credit','recon','sav','exp','rem','calc','sched','sstmt']:null;if(ok&&!ok.includes(tab))tab=ok[0];head();$('#app').innerHTML=({dash,cust:custV,loans:loansV,stmt:stmtV,rep:repV,set:setV,collect:collectV,mycol:mycolV,cap:capV,recon:reconV,rem:remV,sched:schedV,cstmt:invStmtV,calc:calcV,exp:expV,credit:creditV,sav:savV,csav:csavV,sstmt:sstmtV,till:tillV})[tab]()}
+function dash(){
+ const ls=L(),sum=f=>ls.reduce((s,l)=>s+f(l),0);
+ const out=sum(l=>l.st=='Written off'?0:l.bal),ovd=sum(l=>l.st=='Overdue'?l.bal:0),wo=sum(l=>l.st=='Written off'?Math.max(0,l.base-l.paid):0);
+ const invLiab=IL().reduce((s,i)=>s+i.liability,0),savHeld=savTotal(),netWorth=out-invLiab-savHeld;
+ const k=[['Disbursed',fmt(sum(l=>l.p))],['Collected',fmt(sum(l=>l.paid))],['Outstanding',fmt(out)],['Overdue',fmt(ovd)],['Penalties accrued',fmt(sum(l=>l.pen))],['Written off',fmt(wo)],['Active loans',ls.filter(l=>l.st=='Active'||l.st=='Overdue').length],['Owed to investors',fmt(invLiab)],['Client savings held',fmt(savHeld)],['Net worth',fmt(netWorth)]];
+ const ms=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);ms.push(d.toISOString().slice(0,7))}
+ const dis=ms.map(m=>S.l.filter(l=>l.d.startsWith(m)).reduce((s,l)=>s+l.p,0)),col=ms.map(m=>S.l.reduce((s,l)=>s+l.pay.filter(x=>x.dt.startsWith(m)).reduce((a,x)=>a+x.a,0),0));
+ const mx=Math.max(1,...dis,...col);let svg='';
+ ms.forEach((m,i)=>{const x=20+i*88,h1=dis[i]/mx*150,h2=col[i]/mx*150;
+  svg+=`<rect x="${x}" y="${170-h1}" width="30" height="${h1}" rx="3" fill="var(--pr)"/><rect x="${x+34}" y="${170-h2}" width="30" height="${h2}" rx="3" fill="var(--am)"/><text x="${x+8}" y="188">${m.slice(2)}</text>`});
+ const stc={};ls.forEach(l=>stc[l.st]=(stc[l.st]||0)+1);const tot=ls.length||1;
+ const cols={Active:'var(--pr)',Overdue:'var(--rd)',Paid:'var(--gn)','Written off':'var(--mu)'};
+ return `${role=='admin'?`<p class="hint">Amounts are blurred on screen for privacy. Tap "Show amounts" in the top bar to reveal${S.cfg.pin?' (PIN required)':''}.</p>`:''}<div class="grid">${k.filter(x=>role!='supervisor'||(x[0]!='Owed to investors'&&x[0]!='Net worth')).map(x=>`<div class="card kpi" style="margin:0"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
+ ${role=='supervisor'?'':`<p class="hint">Net worth = your outstanding loan book minus what you still owe investors (Capital tab) and the savings you hold for clients (Savings tab). It's your true equity, not money that's really theirs.</p>`}
+ <div class="two"><div class="card"><h2>Disbursed vs collected (6 months)</h2><svg viewBox="0 0 540 200" width="100%"><line x1="10" x2="530" y1="170" y2="170" stroke="var(--bd)"/>${svg}</svg>
+ <div class="mu"><span style="color:var(--pr)">■</span> Disbursed &nbsp;<span style="color:var(--am)">■</span> Collected</div></div>
+ <div class="card"><h2>Portfolio status</h2>${Object.entries(stc).map(([s,n])=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><span>${s}</span><b>${n}</b></div><div style="height:10px;background:var(--bd);border-radius:6px"><div style="height:10px;width:${n/tot*100}%;background:${cols[s]};border-radius:6px"></div></div></div>`).join('')||'<p class="mu">No loans yet.</p>'}</div></div>
+ <div class="card"><h2>Overdue loans</h2>${table(['Client','Phone','Days','Balance'],ls.filter(l=>l.st=='Overdue').sort((a,b)=>b.od-a.od).map(l=>[esc(l.cn),esc(l.ph),`<b style="color:var(--rd)">${l.od}</b>`,fmt(l.bal)]),'No overdue loans 🎉')}</div>`;
+}
+function collectV(){
+ const cs=S.c.filter(c=>!collectQ||norm(c.name+c.phone).includes(norm(collectQ)));
+ const blocks=cs.map(c=>{const ls=L().filter(l=>l.c==c.id&&l.st!='Written off'&&l.st!='Paid');if(!ls.length)return '';
+  return `<div class="card"><h2 style="display:flex;align-items:center;gap:10px">${c.photo?`<img src="${c.photo}" style="width:40px;height:40px;object-fit:cover;border-radius:8px">`:''}${esc(c.name)} <span class="mu" style="font-weight:400">${esc(c.phone)}</span></h2>${table(['Start','Balance','Due','Status',''],ls.map(l=>[l.d,fmt(l.bal),l.due,tag(l.st),`<button class="btn s" onclick="payForm(${l.id})">Record payment</button>`]))}</div>`}).filter(Boolean);
+ return `<div class="card"><label>Search client</label><input id="cq" value="${esc(collectQ)}" placeholder="Name or phone…" oninput="collectQ=this.value;render()" autofocus></div>${blocks.join('')||'<p class="mu">No matching clients with an open balance.</p>'}`;
+}
+function pad(n,w){return String(n).padStart(w,'0')}
+function acctNew(c){let n=S.cfg.acctN||1,no;do{no='SAV-'+pad(n,5);n++}while(S.c.some(x=>x.acct==no));S.cfg.acctN=n;c.acct=no;return no}
+function ensureAcct(cid){const c=S.c.find(x=>x.id==cid);return c.acct||acctNew(c)}
+function assignAccounts(){S.c.slice().sort((a,b)=>a.id-b.id).forEach(c=>{if(!c.acct&&(S.savings||[]).some(t=>t.c==c.id))acctNew(c)})}
+function nextRef(prefix){const key='ref'+prefix;let n=S.cfg[key]||1,no;do{no=prefix+'-'+pad(n,6);n++}while(findReceipt(no));return{no,next:n,key}}
+function thumb(c){return c.photo?`<img src="${c.photo}" style="width:34px;height:34px;object-fit:cover;border-radius:6px">`:`<div style="width:34px;height:34px;border-radius:6px;background:var(--bd)"></div>`}
+function savBal(cid){return (S.savings||[]).filter(t=>t.c==cid).reduce((s,t)=>s+(t.type=='deposit'?t.a:-t.a),0)}
+function savTotal(){return (S.savings||[]).reduce((s,t)=>s+(t.type=='deposit'?t.a:-t.a),0)}
+function savV(){
+ const rows=S.c.map(c=>({c,bal:savBal(c.id),n:(S.savings||[]).filter(t=>t.c==c.id).length})).sort((a,b)=>b.bal-a.bal||a.c.name.localeCompare(b.c.name));
+ const holders=rows.filter(r=>r.bal>0).length,total=rows.reduce((s,r)=>s+r.bal,0),adm=role=='admin'||role=='supervisor';
+ return `<div class="bar">${adm?`<button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('savings-balances-'+today(),[['Account','Client','Phone','Transactions','Balance'],...rows.filter(r=>r.n>0).map(r=>[r.c.acct||'',r.c.name,r.c.phone,r.n,r.bal])])">Excel (CSV)</button>`:''}
+ <input id="fsv" placeholder="Filter by name, phone or account no…" style="max-width:280px" oninput="filterRows('#fsv')"></div>
+ ${adm?`<div class="grid"><div class="card kpi" style="margin:0"><small>Total savings held</small><b>${fmt(total)}</b></div><div class="card kpi" style="margin:0"><small>Clients with savings</small><b>${holders}</b></div></div>
+ <p class="hint">Each client gets a unique account number on their first deposit. Savings are money you hold for clients and owe back, so they're subtracted from Net worth on the Dashboard.</p>`:`<p class="hint">Search by name, phone or account number. Check the client's photo before every withdrawal.</p>`}
+ <div class="card">${table(['','Account','Client','Phone','Transactions','Balance',''],rows.map(r=>[thumb(r.c),esc(r.c.acct||'—'),esc(r.c.name),esc(r.c.phone),r.n,`<b>${fmt(r.bal)}</b>`,`<button class="btn s" onclick="savForm(${r.c.id},'deposit')">Deposit</button> ${r.bal>0?`<button class="btn s g" onclick="savForm(${r.c.id},'withdraw')">Withdraw</button> `:''}${r.n?`<button class="btn s g" onclick="go('sstmt',${r.c.id})">Statement</button>`:''}`]),'Add customers first.',rows.map(r=>`data-s="${norm(r.c.name+r.c.phone+(r.c.acct||''))}"`))}</div>`;
+}
+function csavV(){
+ const rows=S.c.slice().sort((a,b)=>a.name.localeCompare(b.name));
+ return `<div class="card"><label>Search client</label><input id="sq" placeholder="Name, phone or account no…" oninput="filterRows('#sq')"></div>
+ <p class="hint">Record money a client gives you to save. The receipt number is generated automatically — write it on the client's receipt.</p>
+ <div class="card">${table(['','Account','Client','Phone','Savings balance',''],rows.map(c=>[thumb(c),esc(c.acct||'—'),esc(c.name),esc(c.phone),fmt(savBal(c.id)),`<button class="btn s" onclick="savForm(${c.id},'deposit')">Deposit</button>`]),'No clients.',rows.map(c=>`data-s="${norm(c.name+c.phone+(c.acct||''))}"`))}</div>`;
+}
+function savForm(cid,type){if(role=='collector')type='deposit';const c=cust(cid),dep=type=='deposit',ref=nextRef(dep?'SR':'WD').no;
+ const photo=c.photo?(dep?`<img src="${c.photo}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;display:block;margin:0 auto 6px">`:`<img src="${c.photo}" style="width:220px;height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--bd);display:block;margin:0 auto 8px">`)
+  :(dep?'':`<div style="text-align:center;padding:14px;border:2px dashed var(--am);border-radius:12px;color:var(--am);font-weight:600;margin-bottom:8px">No photo on file — check the client's ID document carefully</div>`);
+ open(`<h2>${dep?'Savings deposit':'Savings withdrawal'}</h2>${photo}
+ <div style="text-align:center;margin-bottom:8px"><div style="font-size:${dep?16:20}px;font-weight:700">${esc(c.name)}</div><div class="mu">${c.acct?`Account ${esc(c.acct)}`:'New savings account — number assigned on first deposit'} · ${esc(c.phone)}${c.nid?` · ID ${esc(c.nid)}`:''}</div></div>
+ <p class="mu" style="text-align:center">Current savings balance <b>${fmt(savBal(cid))}</b></p>
+ <label>Amount (${esc(S.cfg.cur)})</label><input id="f1" type="number" min="0"><label>Date (today — cannot be changed)</label><input id="f2" value="${today()}" readonly>
+ <label>${dep?'Receipt number (auto-generated)':'Voucher number (auto-generated)'}</label><input id="f3" value="${ref}" readonly>
+ <label>${dep?'Received by':'Paid out by'} (automatic — the logged-in user)</label><input id="f4" value="${esc(curUser.name)}" readonly>
+ ${dep?'':`<label style="display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--tx);font-size:14px"><input type="checkbox" id="fv" style="width:auto"> I have checked that this person matches the photo / ID of the account holder</label>`}
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="savSave(${cid},'${type}')">${dep?'Record deposit':'Record withdrawal'}</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function savSave(cid,type){if(role=='collector')type='deposit';const a=+$('#f1').value,dt=today(),tm=new Date().toTimeString().slice(0,5);
+ if(!(a>0))return alert('Enter an amount');
+ const last=(S.savings||[]).reduce((m,x)=>x.dt>m?x.dt:m,'');if(dt<last)return alert(`This computer's date (${dt}) is earlier than the last recorded savings transaction (${last}). Entries can't go backwards — please check the computer's date and time.`);
+ if(type=='withdraw'){if(a>savBal(cid))return alert(`Withdrawal of ${fmtN(a)} is more than the savings balance of ${fmtN(savBal(cid))}.`);
+  const v=$('#fv');if(!v||!v.checked)return alert('Please tick the box to confirm you have checked the client against their photo / ID.')}
+ const ref=nextRef(type=='deposit'?'SR':'WD');if(type=='deposit')ensureAcct(cid);S.cfg[ref.key]=ref.next;
+ S.savings=S.savings||[];const t={id:S.n++,c:cid,dt,tm,type,a,rc:ref.no,by:curUser.name,cby:role=='collector'?curUser.id:null,tid:role=='teller'?curUser.id:null};
+ if(type=='withdraw')t.ver=true;
+ S.savings.push(t);save();dlg.close();render();afterSav(t.id)}
+function afterSav(id){const t=S.savings.find(x=>x.id==id),dep=t.type=='deposit';
+ open(`<h2>${dep?'Deposit':'Withdrawal'} recorded</h2>
+ <div style="text-align:center;margin:8px 0"><div class="mu">${dep?'Receipt number':'Voucher number'}</div><div style="font-size:26px;font-weight:800;letter-spacing:1px">${esc(t.rc)}</div><div class="mu">${dep?'Write this number on the client\'s receipt · ':''}Account ${esc(cust(t.c).acct||'—')}</div></div>
+ <p class="mu" style="text-align:center">${fmt(t.a)} · ${esc(cust(t.c).name)} · New balance <b>${fmt(savBal(t.c))}</b></p>
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="printSavReceipt(${id})">🖨 Print receipt</button><button class="btn g" onclick="dlg.close()">Done</button></div>`)}
+function savReceiptHtml(id){const t=S.savings.find(x=>x.id==id),c=cust(t.c),g=S.cfg,list=S.savings.filter(x=>x.c==t.c),bal=list.slice(0,list.indexOf(t)+1).reduce((s,x)=>s+(x.type=='deposit'?x.a:-x.a),0),dep=t.type=='deposit';
+ return `<div style="text-align:center;margin-bottom:10px">${g.logo?`<img src="${g.logo}" style="max-height:70px;max-width:100%"><br>`:''}<b style="font-size:16px">${esc(g.name)}</b><br><span style="color:#555">${esc(g.addr)}${g.addr&&g.phone?' · ':''}${esc(g.phone)}</span></div>
+ <h3 style="text-align:center;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin:10px 0">${dep?'SAVINGS DEPOSIT RECEIPT':'SAVINGS WITHDRAWAL VOUCHER'}</h3>
+ <table style="width:100%;font-size:13px"><tr><td>${dep?'Receipt No':'Voucher No'}</td><td style="text-align:right"><b>${esc(t.rc)||'—'}</b></td></tr><tr><td>Account No</td><td style="text-align:right"><b>${esc(c.acct)||'—'}</b></td></tr><tr><td>Date</td><td style="text-align:right">${t.dt}</td></tr>
+ <tr><td>Client</td><td style="text-align:right">${esc(c.name)}</td></tr><tr><td>Phone</td><td style="text-align:right">${esc(c.phone)}</td></tr><tr><td>${dep?'Collected by':'Paid out by'}</td><td style="text-align:right">${esc(t.by)||'—'}</td></tr></table>
+ <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:16px"><b>${dep?'Amount deposited':'Amount withdrawn'}</b><b>${fmtN(t.a)}</b></div>
+ <div style="display:flex;justify-content:space-between;color:#555;margin-top:4px"><span>Savings balance</span><span>${fmtN(bal)}</span></div>
+ ${dep?'':`<div style="margin-top:28px;display:flex;justify-content:space-between;color:#555"><span>Client signature: ____________</span><span>Teller: ____________</span></div>`}
+ <p style="text-align:center;color:#555;margin-top:16px">Thank you.</p>`}
+function printSavReceipt(id){$('#rcpt').innerHTML=savReceiptHtml(id);document.body.classList.add('printrec');window.print()}
+function sstmtList(cid){return (S.savings||[]).filter(t=>t.c==cid).slice().sort((a,b)=>a.dt.localeCompare(b.dt)||a.id-b.id)}
+function sstmtHtml(cid){const c=cust(cid),g=S.cfg;let bal=0;
+ const rows=sstmtList(cid).map(t=>{bal+=t.type=='deposit'?t.a:-t.a;return[t.dt+(t.tm?' '+t.tm:''),t.type=='deposit'?'Deposit':'Withdrawal',esc(t.rc)||'—',esc(t.by)||'—',fmt(t.a),fmt(bal)+(role=='admin'?` <button class="btn s d" onclick="savDel(${t.id})">✕</button>`:'')]});
+ return `<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">${g.logo?`<img src="${g.logo}" style="height:48px">`:''}<div><b style="font-size:18px">${esc(g.name)}</b><br><span class="mu">${esc(g.addr)} ${esc(g.phone)}</span></div></div>
+ <h2>Savings Statement — ${esc(c.name)}</h2>${c.photo?`<img src="${c.photo}" style="float:right;width:90px;height:90px;object-fit:cover;border-radius:8px;margin:-40px 0 0 10px">`:''}<p class="mu"><b>Account ${esc(c.acct||'—')}</b> · ${esc(c.phone)} · ${esc(c.addr)} · Date ${today()}</p>
+ ${table(['Date','Type','Receipt / Voucher','By','Amount','Balance'],rows,'No savings transactions yet.')}
+ <p style="border-top:1px solid var(--bd);padding-top:8px"><b>Current savings balance: ${fmt(bal)}</b></p>`}
+function sstmtV(){const c=S.c.find(x=>x.id==selSav);if(!c)return '<p class="mu">Pick a client from the Savings tab.</p>';
+ return `<div class="bar"><button class="btn g" onclick="go('sav')">← Back to Savings</button><button class="btn" onclick="savForm(${c.id},'deposit')">Deposit</button><button class="btn g" onclick="savForm(${c.id},'withdraw')">Withdraw</button><button class="btn g" onclick="window.print()">Print (A4)</button><button class="btn g" onclick="sstmtCsv(${c.id})">Excel (CSV)</button></div><div class="card">${sstmtHtml(c.id)}</div>`}
+function sstmtCsv(cid){let bal=0;const rows=[['Account','Date','Type','Receipt / Voucher','By','Amount','Balance']];sstmtList(cid).forEach(t=>{bal+=t.type=='deposit'?t.a:-t.a;rows.push([cust(cid).acct||'',t.dt+(t.tm?' '+t.tm:''),t.type,t.rc||'',t.by||'',t.a,bal])});csvDl('savings-'+cust(cid).name.replace(/\W+/g,'_'),rows)}
+function savDel(id){if(role!='admin')return;if(!confirm('Delete this savings entry? The balance will be recalculated.'))return;S.savings=S.savings.filter(t=>t.id!=id);save();render()}
+function tellerForm(id){const c=(S.tellers||[]).find(x=>x.id==id)||{};
+ open(`<h2>${id?'Edit':'New'} teller</h2><label>Name</label><input id="f1" value="${esc(c.name)}"><label>PIN (4+ digits)</label><input id="f2" value="${esc(c.pin)}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="tellerSave(${id||0})">Save</button>${id?`<button class="btn d" onclick="tellerDel(${id})">Delete</button>`:''}<button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function tellerSave(id){const n=$('#f1').value.trim(),p=$('#f2').value.trim();if(!n||p.length<4)return alert('Enter a name and a PIN of at least 4 digits');if(nameTaken(n,'t',id))return alert(`The name "${n}" is already used by another account. Every login name must be different.`);
+ S.tellers=S.tellers||[];if(id)Object.assign(S.tellers.find(x=>x.id==id),{name:n,pin:p});else S.tellers.push({id:S.n++,name:n,pin:p});save();dlg.close();render()}
+function tellerDel(id){if(!confirm('Delete this teller account? Their past transactions are kept.'))return;S.tellers=(S.tellers||[]).filter(x=>x.id!=id);save();dlg.close();render()}
+function supForm(id){const c=(S.supervisors||[]).find(x=>x.id==id)||{};
+ open(`<h2>${id?'Edit':'New'} supervisor</h2><label>Name</label><input id="f1" value="${esc(c.name)}"><label>PIN (4+ digits)</label><input id="f2" value="${esc(c.pin)}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="supSave(${id||0})">Save</button>${id?`<button class="btn d" onclick="supDel(${id})">Delete</button>`:''}<button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function supSave(id){const n=$('#f1').value.trim(),p=$('#f2').value.trim();if(!n||p.length<4)return alert('Enter a name and a PIN of at least 4 digits');
+ if(nameTaken(n,'s',id))return alert(`The name "${n}" is already used by another account. Every login name must be different.`);
+ S.supervisors=S.supervisors||[];if(id)Object.assign(S.supervisors.find(x=>x.id==id),{name:n,pin:p});else S.supervisors.push({id:S.n++,name:n,pin:p});save();dlg.close();render()}
+function supDel(id){if(!confirm('Delete this supervisor account?'))return;S.supervisors=(S.supervisors||[]).filter(x=>x.id!=id);save();dlg.close();render()}
+let tillDate=null;
+function tillV(){tillDate=tillDate||today();
+ const mine=(S.savings||[]).filter(t=>t.tid==curUser.id&&t.dt==tillDate).sort((a,b)=>(a.tm||'').localeCompare(b.tm||'')||a.id-b.id);
+ const dep=mine.filter(t=>t.type=='deposit').reduce((s,t)=>s+t.a,0),wd=mine.filter(t=>t.type=='withdraw').reduce((s,t)=>s+t.a,0);
+ return `<div class="bar"><div><label>Date</label><input type="date" value="${tillDate}" onchange="tillDate=this.value||today();render()"></div><button class="btn g" onclick="window.print()">Print</button></div>
+ <div class="grid"><div class="card kpi" style="margin:0"><small>Deposits received</small><b>${fmt(dep)}</b></div><div class="card kpi" style="margin:0"><small>Withdrawals paid</small><b>${fmt(wd)}</b></div><div class="card kpi" style="margin:0"><small>Cash that should be in your till</small><b>${fmt(dep-wd)}</b></div><div class="card kpi" style="margin:0"><small>Transactions</small><b>${mine.length}</b></div></div>
+ <p class="hint">At the end of the day, count your cash — it should equal the amount above (plus any opening float you started with).</p>
+ <div class="card"><h2>${esc(curUser.name)} — ${tillDate}</h2>${table(['Time','Type','Receipt / Voucher','Account','Client','Amount'],mine.map(t=>[t.tm||'—',t.type=='deposit'?'Deposit':'Withdrawal',esc(t.rc),esc(cust(t.c).acct||'—'),esc(cust(t.c).name),fmt(t.a)]),'No transactions on this date.')}</div>`}
+function mycolV(){
+ const mine=[];S.l.forEach(l=>l.pay.forEach(p=>{if(p.cby==curUser.id)mine.push({dt:p.dt,client:cust(l.c).name,rc:p.rc,a:p.a})}));
+ (S.savings||[]).forEach(t=>{if(t.type=='deposit'&&t.cby==curUser.id)mine.push({dt:t.dt,client:cust(t.c).name+' (savings)',rc:t.rc,a:t.a})});
+ mine.sort((a,b)=>b.dt.localeCompare(a.dt));
+ const tdy=mine.filter(p=>p.dt==today());
+ return `<div class="grid"><div class="card kpi" style="margin:0"><small>Today's receipts</small><b>${tdy.length}</b></div><div class="card kpi" style="margin:0"><small>Today's total</small><b>${fmt(tdy.reduce((s,p)=>s+p.a,0))}</b></div></div>
+ <p class="hint">This should match the cash and receipts you hand in today.</p>
+ <div class="card"><h2>My collections</h2>${table(['Date','Client','Receipt No','Amount'],mine.map(p=>[p.dt,esc(p.client),esc(p.rc)||'—',fmt(p.a)]),'No payments recorded yet.')}</div>`;
+}
+function reconV(){
+ rFrom=rFrom||today();rTo=rTo||today();
+ const rows=[];S.l.forEach(l=>l.pay.forEach(p=>{
+  if(p.dt<rFrom||p.dt>rTo)return;
+  if(rCol!='all'){if(rCol=='admin'){if(p.cby)return}else if(p.cby!=rCol)return}
+  rows.push({dt:p.dt,rc:p.rc,client:cust(l.c).name,loan:l.id,amt:p.a,by:p.by||'—'});
+ }));
+ (S.savings||[]).forEach(t=>{if(t.type!='deposit'||t.dt<rFrom||t.dt>rTo)return;
+  if(rCol!='all'){const who=t.cby?String(t.cby):t.tid?'t'+t.tid:'admin';if(who!=rCol)return}
+  rows.push({dt:t.dt,rc:t.rc,client:cust(t.c).name,loan:'Savings',amt:t.a,by:t.by||'—',sav:true})});
+ rows.sort((a,b)=>a.dt.localeCompare(b.dt)||(a.rc||'').localeCompare(b.rc||''));
+ const total=rows.reduce((s,r)=>s+r.amt,0);
+ const exps=(S.expenses||[]).filter(e=>e.dt>=rFrom&&e.dt<=rTo).sort((a,b)=>a.dt.localeCompare(b.dt));
+ const wds=(S.savings||[]).filter(t=>t.type=='withdraw'&&t.dt>=rFrom&&t.dt<=rTo&&(rCol=='all'||(t.tid?'t'+t.tid:'admin')==rCol)).sort((a,b)=>a.dt.localeCompare(b.dt));
+ const depTotal=rows.filter(r=>r.sav).reduce((s,r)=>s+r.amt,0),wdTotal=wds.reduce((s,t)=>s+t.a,0);
+ const expTotal=exps.reduce((s,e)=>s+e.amt,0),net=total-expTotal-wdTotal;
+ return `<div class="bar">
+ <div><label>From</label><input type="date" value="${rFrom}" onchange="rFrom=this.value;render()"></div>
+ <div><label>To</label><input type="date" value="${rTo}" onchange="rTo=this.value;render()"></div>
+ <div><label>Collector / teller</label><select onchange="rCol=this.value;render()">
+ <option value="all" ${rCol=='all'?'selected':''}>All</option><option value="admin" ${rCol=='admin'?'selected':''}>Admin</option>
+ ${S.collectors.map(c=>`<option value="${c.id}" ${rCol==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}${(S.tellers||[]).map(t=>`<option value="t${t.id}" ${rCol=='t'+t.id?'selected':''}>Teller: ${esc(t.name)}</option>`).join('')}</select></div>
+ <button class="btn g" onclick="window.print()">Print</button>
+ <button class="btn g" onclick="csvDl('collections-'+rFrom+'_to_'+rTo,[['Date','Receipt No','Client','Loan','Collected by','Amount'],...rows.map(r=>[r.dt,r.rc,r.client,r.loan,r.by,r.amt])])">Collections (CSV)</button>
+ <button class="btn g" onclick="csvDl('expenses-'+rFrom+'_to_'+rTo,[['Date','Category','Description','Amount'],...exps.map(e=>[e.dt,e.cat,e.desc,e.amt])])">Expenses (CSV)</button>
+ <button class="btn" onclick="csvDl('collections-and-expenses-'+rFrom+'_to_'+rTo,[['COLLECTIONS'],['Date','Receipt No','Client','Loan','Collected by','Amount'],...rows.map(r=>[r.dt,r.rc,r.client,r.loan,r.by,r.amt]),[],['EXPENSES'],['Date','Category','Description','Amount'],...exps.map(e=>[e.dt,e.cat,e.desc,e.amt]),[],['SUMMARY'],['Total collected',total],['Total expenses',expTotal],['Savings withdrawals',wdTotal],['Net cash',net]])">Both (CSV)</button></div>
+ <div class="grid"><div class="card kpi" style="margin:0"><small>Receipts in range</small><b>${rows.length}</b></div><div class="card kpi" style="margin:0"><small>Total collected</small><b>${fmt(total)}</b></div><div class="card kpi" style="margin:0"><small>Expenses in range</small><b>${fmt(expTotal)}</b></div><div class="card kpi" style="margin:0"><small>Savings deposits (in collected)</small><b>${fmt(depTotal)}</b></div><div class="card kpi" style="margin:0"><small>Savings withdrawn</small><b>${fmt(wdTotal)}</b></div><div class="card kpi" style="margin:0"><small>Net cash</small><b style="color:${net>=0?'var(--gn)':'var(--rd)'}">${fmt(net)}</b></div></div>
+ <p class="hint">Compare the collections total and receipt count against the collector's physical receipt book before accepting their cash. Collections include savings deposits received. Net cash = collections − expenses − savings withdrawals paid out.</p>
+ <div class="card"><h2>Collections</h2>${table(['Date','Receipt No','Client','Loan','Collected by','Amount'],rows.map(r=>[r.dt,esc(r.rc)||'—',esc(r.client),(typeof r.loan=='number'?'#'+r.loan:r.loan),esc(r.by),fmt(r.amt)]),'No payments recorded in this range.')}</div>
+ <div class="card"><h2>Expenses</h2>${table(['Date','Category','Description','Amount'],exps.map(e=>[e.dt,esc(e.cat),esc(e.desc),fmt(e.amt)]),'No expenses recorded in this range.')}<div class="bar" style="margin-top:10px"><button class="btn s g" onclick="go('exp')">Manage expenses →</button></div></div>
+ ${wds.length?`<div class="card"><h2>Savings withdrawals paid out</h2>${table(['Date','Client','Reference','Amount'],wds.map(t=>[t.dt,esc(cust(t.c).name),esc(t.rc)||'—',fmt(t.a)]))}</div>`:''}`;
+}
+function remV(){
+ const ls=L().filter(l=>l.st=='Active'||l.st=='Overdue').sort((a,b)=>b.od-a.od);
+ return `<p class="hint">One tap opens WhatsApp with a reminder pre-filled — you still need to press send there. Edit the wording in Settings.</p>
+ <div class="bar"><button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('reminders-'+today(),[['Client','Phone','Balance','Due','Overdue days'],...ls.map(l=>[l.cn,l.ph,Math.round(l.bal),l.due,l.od])])">Excel (CSV)</button></div>
+ <div class="card">${table(['Client','Phone','Balance','Due','Overdue',''],ls.map(l=>[esc(l.cn),esc(l.ph),fmt(l.bal),l.due,l.od?`<b style="color:var(--rd)">${l.od} d</b>`:'–',waHref(l.ph,waMsg(l))?`<a class="btn s" href="${waHref(l.ph,waMsg(l))}" target="_blank" rel="noopener">WhatsApp</a>`:`<span class="mu" style="font-size:12px">No phone</span>`]),'Nothing due — everyone is current.')}</div>`;
+}
+function expV(){
+ const rows=(S.expenses||[]).slice().sort((a,b)=>b.dt.localeCompare(a.dt)),total=rows.reduce((s,e)=>s+e.amt,0);
+ return `<div class="bar"><button class="btn" onclick="expForm()">+ New expense</button><button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('expenses',[['Date','Category','Description','Amount'],...rows.map(e=>[e.dt,e.cat,e.desc,e.amt])])">Excel (CSV)</button>
+ <input id="fe" placeholder="Filter by category or description…" style="max-width:260px" oninput="filterRows('#fe')"></div>
+ <div class="grid"><div class="card kpi" style="margin:0"><small>Total expenses (all time)</small><b>${fmt(total)}</b></div></div>
+ <p class="hint">Right-click (or long-press on mobile) a row for quick actions. See Daily Collections for expenses vs. collections by date range.</p>
+ <div class="card">${table(['Date','Category','Description','Amount',''],rows.map(e=>[e.dt,esc(e.cat),esc(e.desc),fmt(e.amt),`<button class="btn s g" onclick="expForm(${e.id})">Edit</button>${role=='admin'?` <button class="btn s d" onclick="expDel(${e.id})">Delete</button>`:''}`]),'No expenses recorded yet.',rows.map(e=>`data-s="${norm(e.cat+e.desc)}"`))}</div>`;
+}
+function expForm(id){S.expenses=S.expenses||[];const e=S.expenses.find(x=>x.id==id)||{};
+ open(`<h2>${id?'Edit':'New'} expense</h2><label>Date</label><input id="f1" type="date" value="${e.dt||today()}">
+ <label>Category</label><input id="f2" list="expCats" value="${esc(e.cat)}" placeholder="e.g. Collector pay, Transport, Meals">
+ <datalist id="expCats"><option>Collector pay</option><option>Transport</option><option>Meals</option><option>Airtime/Data</option><option>Rent</option><option>Office supplies</option><option>Other</option></datalist>
+ <label>Description</label><input id="f3" value="${esc(e.desc)}" placeholder="optional notes"><label>Amount (${esc(S.cfg.cur)})</label><input id="f4" type="number" min="0" value="${e.amt||''}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="expSave(${id||0})">Save</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function expSave(id){const dt=$('#f1').value,cat=$('#f2').value.trim(),desc=$('#f3').value.trim(),amt=+$('#f4').value;
+ if(!dt||!cat||!(amt>0))return alert('Enter a date, category and amount');
+ S.expenses=S.expenses||[];const o={dt,cat,desc,amt};if(id)Object.assign(S.expenses.find(x=>x.id==id),o);else S.expenses.push({id:S.n++,...o});
+ save();dlg.close();render()}
+function expDel(id){if(role!='admin')return alert('Only the admin can delete records.');if(!confirm('Delete this expense entry?'))return;S.expenses=(S.expenses||[]).filter(x=>x.id!=id);save();render()}
+function custV(){
+ const ls=L();
+ return `<div class="bar"><button class="btn" onclick="custForm()">+ New customer</button><button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('customers',[['Name','Phone','Address','ID No','Loans','Outstanding'],...S.c.map(c=>{const m=L().filter(l=>l.c==c.id);return[c.name,c.phone,c.addr,c.nid,m.length,Math.round(m.reduce((s,l)=>s+(l.st=='Written off'?0:l.bal),0))]})])">Excel (CSV)</button>
+ <input id="fc" placeholder="Filter by name or phone…" style="max-width:220px" oninput="filterRows('#fc')"></div>
+ <p class="hint">Right-click (or long-press on mobile) a row for quick actions.</p>
+ <div class="card">${table(['','Name','Phone','Address','Loans','Outstanding','Credit',''],S.c.map(c=>{const m=ls.filter(l=>l.c==c.id);return[c.photo?`<img src="${c.photo}" style="width:34px;height:34px;object-fit:cover;border-radius:6px">`:`<div style="width:34px;height:34px;border-radius:6px;background:var(--bd)"></div>`,esc(c.name),esc(c.phone),esc(c.addr),m.length,fmt(m.reduce((s,l)=>s+(l.st=='Written off'?0:l.bal),0)),gradeTag(creditScore(c.id).grade),`<button class="btn s g" onclick="go('stmt',${c.id})">Statement</button> <button class="btn s g" onclick="custForm(${c.id})">Edit</button>`]}),'Add your first customer.',S.c.map(c=>`data-ctx="cust:${c.id}" data-s="${norm(c.name+c.phone)}"`))}</div>`;
+}
+function loansV(){
+ const ls=L().sort((a,b)=>b.d.localeCompare(a.d));
+ return `<div class="bar"><button class="btn" onclick="loanForm()">+ New loan</button><button class="btn g" onclick="window.print()">Print</button><button class="btn g" onclick="csvDl('loans',[['Client','Phone','Start','Principal','Rate %/mo','Months','Interest','Due date','Paid','Penalty','Balance','Overdue days','Status'],...L().map(l=>[l.cn,l.ph,l.d,l.p,l.r,l.t,Math.round(l.interest),l.due,l.paid,Math.round(l.pen),Math.round(l.bal),l.od,l.st])])">Excel (CSV)</button>
+ <input id="fl" placeholder="Filter by client, phone or status…" style="max-width:240px" oninput="filterRows('#fl')"></div>
+ <p class="hint">Right-click (or long-press on mobile) a row for quick actions.</p>
+ <div class="card">${table(['Client','Start','Principal','Rate','Due','Paid','Penalty','Balance','Overdue','Status',''],ls.map(l=>[esc(l.cn),l.d,fmt(l.p),l.r+'%/mo × '+l.t,l.due,fmt(l.paid),fmt(l.pen),`<b>${fmt(l.bal)}</b>`,l.od?l.od+' d':'–',tag(l.st)+(l.topFrom?`<br><span class="mu" style="font-size:11px">↳ ${l.topKind=='rollover'?'rollover':'top-up'} of #${l.topFrom}</span>`:'')+(l.top?`<br><span class="mu" style="font-size:11px">→ loan${topInto(l).length>1?'s':''} #${topInto(l).join(', #')}</span>`:''),
+ (l.st!='Written off'&&l.st!='Paid'?`<button class="btn s" onclick="payForm(${l.id})">Pay</button> `:'')+((l.st=='Active'||l.st=='Overdue')?`<button class="btn s g" onclick="go('sched',${l.id})">Schedule</button> `:'')+((l.st=='Active'||l.st=='Overdue')?(waHref(l.ph,waMsg(l))?`<a class="btn s g" href="${waHref(l.ph,waMsg(l))}" target="_blank" rel="noopener">WhatsApp</a> `:`<span class="btn s g" style="opacity:.5" title="No phone on file">WhatsApp</span> `):'')+(l.st=='Overdue'?`<button class="btn s d" onclick="wo(${l.id},1)">Write off</button>`:l.wo?`<button class="btn s g" onclick="wo(${l.id},0)">Reinstate</button>`:'')]),'No loans yet.',ls.map(l=>`data-ctx="loan:${l.id}" data-s="${norm(l.cn+l.ph+l.st)}"`))}</div>`;
+}
+function schedule(o){
+ const interest=o.p*o.r/100*o.t;
+ if(o.schedType=='manual'&&o.schedRows&&o.schedRows.length){
+  const rows=o.schedRows.slice().sort((a,b)=>(a.due||'').localeCompare(b.due||'')).map((r,i)=>({n:i+1,due:r.due,amt:+r.amt||0})),base=rows.reduce((s,r)=>s+r.amt,0);
+  return{interest,base,installment:base/rows.length,rows,manual:true};
+ }
+ const base=o.p+interest,installment=base/o.t,rows=[];
+ for(let n=1;n<=o.t;n++)rows.push({n,due:addM(o.d,n),amt:installment});
+ return{interest,base,installment,rows,manual:false};
+}
+function schedProgress(l){const s=schedule(l),paidTotal=l.pay.reduce((a,x)=>a+x.a,0);let cum=0;
+ return s.rows.map(r=>{cum+=r.amt;const status=paidTotal>=cum-0.5?'Paid':(today()>r.due?'Overdue':'Due');return{...r,status}})}
+function schedHtml(id){const l=S.l.find(x=>x.id==id),c=cust(l.c),g=S.cfg,rows=schedProgress(l),next=rows.find(r=>r.status!='Paid');
+ return `<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">${g.logo?`<img src="${g.logo}" style="height:48px">`:''}<div><b style="font-size:18px">${esc(g.name)}</b><br><span class="mu">${esc(g.addr)} ${esc(g.phone)}</span></div></div>
+ <h2>Payment Schedule — ${esc(c.name)}</h2><p class="mu">${esc(c.phone)} · ${esc(c.addr)} · Loan #${l.id} · Date issued ${today()}</p>
+ <p class="mu">Principal ${fmt(l.p)} · Rate ${l.r}%/mo · Term ${l.t} month${l.t>1?'s':''} · Starts ${l.d} · Schedule: ${l.schedType=='manual'?'Manual (customized)':'Auto (equal installments)'}</p>
+ ${next?`<p><b>Next payment due: ${next.due} — ${fmt(next.amt)}</b></p>`:`<p><b>All installments settled.</b></p>`}
+ ${table(['#','Due date','Amount','Status'],rows.map(r=>[r.n,r.due,fmt(r.amt),tag(r.status)]))}
+ <p style="border-top:1px solid var(--bd);padding-top:8px"><b>Total repayable: ${fmt(schedule(l).base)} · Current balance: ${fmt(calc(l).bal)}</b></p>
+ <p class="mu" style="margin-top:12px">Please keep this schedule for your records. Contact ${esc(g.name)}${g.phone?` (${esc(g.phone)})`:''} with any questions.</p>`;
+}
+function schedV(){const l=S.l.find(x=>x.id==selLoan);if(!l)return '<p class="mu">Loan not found.</p>';
+ return `<div class="bar"><button class="btn g" onclick="go('loans')">← Back to loans</button><button class="btn" onclick="schedForm(${l.id})">Edit schedule</button><button class="btn g" onclick="window.print()">Print (A4)</button><button class="btn g" onclick="schedDl(${l.id})">Save PDF-ready file</button></div><div class="card">${schedHtml(l.id)}</div>`;
+}
+let schedTmp=[],schedTmpType='auto',schedTmpLoan=null;
+function schedSort(){schedTmp.sort((a,b)=>(a.due||'').localeCompare(b.due||''))}
+function schedForm(id){const l=S.l.find(x=>x.id==id);schedTmpLoan=id;schedTmpType=l.schedType||'auto';
+ schedTmp=(l.schedType=='manual'&&l.schedRows&&l.schedRows.length)?l.schedRows.map(r=>({...r})):schedule(l).rows.map(r=>({due:r.due,amt:Math.round(r.amt)}));
+ schedSort();open(schedFormHtml())}
+function schedDateChange(i,v){schedTmp[i].due=v;schedSort();refreshSchedForm()}
+function schedFormHtml(){const l=S.l.find(x=>x.id==schedTmpLoan),total=schedTmp.reduce((s,r)=>s+(+r.amt||0),0),autoBase=schedule({p:l.p,r:l.r,t:l.t,d:l.d}).base;
+ return `<h2>Edit schedule — Loan #${schedTmpLoan}</h2>
+ <label>Type</label><select id="sft" onchange="schedTmpType=this.value;refreshSchedForm()">
+ <option value="auto" ${schedTmpType=='auto'?'selected':''}>Auto — equal installments, recalculated from principal/rate/term</option>
+ <option value="manual" ${schedTmpType=='manual'?'selected':''}>Manual — set your own dates and amounts</option></select>
+ ${schedTmpType=='manual'?`<p class="hint">Rows are always applied earliest-due first, regardless of the order you add them in — they'll re-sort by date automatically.</p>${table(['Due date','Amount',''],schedTmp.map((r,i)=>[
+  `<input type="date" value="${esc(r.due)}" onchange="schedDateChange(${i},this.value)">`,
+  `<input type="number" value="${r.amt}" style="width:110px" oninput="schedTmp[${i}].amt=+this.value||0;schedUpdateTotal()">`,
+  `<button class="btn s d" onclick="schedTmp.splice(${i},1);refreshSchedForm()">✕</button>`]))}
+ <div class="bar"><button class="btn s g" onclick="schedTmp.push({due:schedTmp.length?addM(schedTmp.reduce((m,r)=>r.due>m?r.due:m,schedTmp[0].due),1):today(),amt:0});schedSort();refreshSchedForm()">+ Add installment</button></div>
+ <p class="mu" id="schedTotalP">${schedTotalText(total,autoBase)}</p>`
+ :`<p class="mu">Installments will be recalculated automatically from this loan's principal, rate and term (${fmtN(autoBase)} total).</p>`}
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="schedFormSave()">Save</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`;
+}
+function schedTotalText(total,autoBase){const left=autoBase-total;
+ return `Installments total: <b>${fmtN(total)}</b>${Math.abs(left)<1?' — matches total repayable ✓':left>0?` — <b style="color:var(--am)">${fmtN(left)} still unallocated</b> (total repayable is ${fmtN(autoBase)})`:` — <b style="color:var(--rd)">${fmtN(-left)} over</b> the total repayable of ${fmtN(autoBase)}`}`;
+}
+function schedUpdateTotal(){const l=S.l.find(x=>x.id==schedTmpLoan),total=schedTmp.reduce((s,r)=>s+(+r.amt||0),0),autoBase=schedule({p:l.p,r:l.r,t:l.t,d:l.d}).base;
+ const el=$('#schedTotalP');if(el)el.innerHTML=schedTotalText(total,autoBase)}
+function refreshSchedForm(){dlg.innerHTML=schedFormHtml()}
+function schedFormSave(){const l=S.l.find(x=>x.id==schedTmpLoan);
+ if(schedTmpType=='manual'){if(!schedTmp.length)return alert('Add at least one installment, or switch to Auto.');
+  l.schedType='manual';l.schedRows=schedTmp.map(r=>({due:r.due,amt:+r.amt||0}));
+ }else{l.schedType='auto';delete l.schedRows}
+ save();dlg.close();render();alert('Schedule saved.')}
+function schedDl(id){const c=cust(S.l.find(x=>x.id==id).c);dl(`schedule-${c.name.replace(/\W+/g,'_')}-loan${id}.html`,`<!DOCTYPE html><meta charset="utf-8"><title>Payment Schedule</title><style>@page{size:A4;margin:18mm}body{font:14px system-ui;max-width:800px;margin:24px auto;color:#111}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px;border-bottom:1px solid #ccc}.tag{font-weight:700;padding:2px 8px;border-radius:99px;background:#eee}.mu{color:#666}</style>${schedHtml(id)}<p class="mu">Open this file and use Print → Save as PDF, or print directly.</p>`)}
+function stmtV(){
+ const cs=S.c;if(!cs.length)return '<p class="mu">Add a customer first.</p>';
+ const c=cust(sel||cs[0].id);sel=c.id;
+ return `<div class="bar"><select id="ss" style="max-width:280px" onchange="sel=+this.value;render()">${cs.map(x=>`<option value="${x.id}" ${x.id==sel?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+ <div><label>From</label><input type="date" value="${stmtFrom||''}" onchange="stmtFrom=this.value||null;render()"></div>
+ <div><label>To</label><input type="date" value="${stmtTo||''}" onchange="stmtTo=this.value||null;render()"></div>
+ ${(stmtFrom||stmtTo)?`<button class="btn s g" style="align-self:flex-end" onclick="stmtFrom=null;stmtTo=null;render()">Show full history</button>`:''}
+ <button class="btn g" onclick="window.print()">Print</button><button class="btn" onclick="stmtDl(${c.id})">Save PDF-ready file</button><button class="btn g" onclick="stmtCsv(${c.id})">Excel (CSV)</button><button class="btn g" onclick="waRemindStmt(${c.id})">WhatsApp reminder</button></div><div class="card">${stmtHtml(c.id)}</div>`;
+}
+function stmtHtml(id){
+ const c=cust(id),ls=L().filter(l=>l.c==id),g=S.cfg;
+ return `<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">${g.logo?`<img src="${g.logo}" style="height:48px">`:''}<div><b style="font-size:18px">${esc(g.name)}</b><br><span class="mu">${esc(g.addr)} ${esc(g.phone)}</span></div></div>
+ <h2>Statement — ${esc(c.name)} ${gradeTag(creditScore(id).grade)}</h2>${c.photo?`<img src="${c.photo}" style="float:right;width:70px;height:70px;object-fit:cover;border-radius:8px;margin:-40px 0 0 10px">`:''}<p class="mu">${esc(c.phone)} · ${esc(c.addr)} · Date ${today()}${(stmtFrom||stmtTo)?` · Showing ${stmtFrom||'start'} to ${stmtTo||'today'}`:''}</p>
+ ${ls.map(l=>{const rows=[];if(inRange(l.d))rows.push([l.d,'Loan disbursed',fmt(l.p)]);
+  l.pay.forEach(x=>{if(inRange(x.dt))rows.push([x.dt,'Payment'+(x.rc?` · Receipt ${esc(x.rc)}`:'')+(x.by?` · by ${esc(x.by)}`:''),fmt(x.a)])});
+  const paidInRange=l.pay.filter(x=>inRange(x.dt)).reduce((s,x)=>s+x.a,0);
+  return `<h3 style="margin:14px 0 4px">Loan #${l.id} — ${fmt(l.p)} @ ${l.r}%/mo × ${l.t} · ${tag(l.st)}</h3>
+ <p class="mu" style="margin:0 0 6px">Interest ${fmt(l.interest)} · Due ${l.due}${l.od?` · <b style="color:var(--rd)">${l.od} days overdue</b>, penalty ${fmt(l.pen)}`:''}${l.topFrom?` · ${l.topKind=='rollover'?'Rollover':'Top-up'} of loan #${l.topFrom}`:''}${l.top?` · Closed and rolled into loan${topInto(l).length>1?'s':''} #${topInto(l).join(', #')} on ${l.top.date}`:''}</p>
+ ${table(['Date','Description','Amount'],rows,'No transactions in this period.')}
+ <p><b>${(stmtFrom||stmtTo)?`Paid in this period ${fmt(paidInRange)} · `:''}Total paid ${fmt(l.paid)} · Current balance ${fmt(l.bal)}</b></p>`}).join('')||'<p class="mu">No loans.</p>'}
+ <p style="border-top:1px solid var(--bd);padding-top:8px"><b>Total outstanding (current): ${fmt(ls.reduce((s,l)=>s+(l.st=='Written off'?0:l.bal),0))}</b></p>`;
+}
+function stmtDl(id){dl(`statement-${cust(id).name.replace(/\W+/g,'_')}.html`,`<!DOCTYPE html><meta charset="utf-8"><title>Statement</title><style>body{font:14px system-ui;max-width:800px;margin:24px auto;color:#111}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px;border-bottom:1px solid #ccc}.tag{font-weight:700}.mu{color:#666}</style>${stmtHtml(id)}<p class="mu">Open this file and use Print → Save as PDF.</p>`)}
+function stmtCsv(id){const rows=[['Loan','Date','Description','Receipt No','Collected By','Amount']];L().filter(l=>l.c==id).forEach(l=>{if(inRange(l.d))rows.push([l.id,l.d,'Disbursed','','',l.p]);l.pay.forEach(x=>{if(inRange(x.dt))rows.push([l.id,x.dt,'Payment',x.rc||'',x.by||'',x.a])});rows.push([l.id,today(),'Balance (current)','','',Math.round(l.bal)])});csvDl('statement-'+cust(id).name.replace(/\W+/g,'_')+(stmtFrom||stmtTo?`-${stmtFrom||'start'}_to_${stmtTo||'today'}`:''),rows)}
+function creditScore(custId){
+ const loans=L().filter(l=>l.c==custId),paid=loans.filter(l=>l.st=='Paid'),onTime=paid.filter(l=>!l.lateSettled).length,late=paid.length-onTime;
+ const wo=loans.filter(l=>l.st=='Written off').length,overdue=loans.filter(l=>l.st=='Overdue'),overdueDays=overdue.reduce((s,l)=>s+l.od,0);
+ const totalBorrowed=loans.reduce((s,l)=>s+l.p,0),totalPaid=loans.reduce((s,l)=>s+l.paid,0),hasHistory=loans.length>0;
+ let score=null,grade='New';
+ if(hasHistory){score=Math.max(0,Math.min(100,Math.round(50+10*onTime+2*late-20*wo-Math.min(30,overdueDays/5))));
+  grade=score>=85?'A':score>=70?'B':score>=50?'C':score>=30?'D':'E'}
+ return{loans:loans.length,onTime,late,wo,overdueNow:overdue.length,overdueDays,totalBorrowed,totalPaid,score,grade,hasHistory};
+}
+function gradeTag(g){const cls={A:'Paid',B:'Paid',C:'Fix',D:'Overdue',E:'Overdue',New:'Written'}[g]||'';return `<span class="tag ${cls}">${g}</span>`}
+function creditV(){
+ const rows=S.c.map(c=>({c,...creditScore(c.id)})).sort((a,b)=>(b.score??-1)-(a.score??-1));
+ return `<p class="hint">Score blends on-time repayments, late settlements, write-offs and current overdue days into an A–E grade. Clients with no loan history yet show as "New" — that's not a bad mark, just no data.</p>
+ <div class="bar"><input id="fcr" placeholder="Filter by name or phone…" style="max-width:240px" oninput="filterRows('#fcr')">
+ <button class="btn g" onclick="window.print()">Print</button>
+ <button class="btn g" onclick="csvDl('credit-scores',[['Client','Phone','Loans','On-time','Late','Written off','Currently overdue','Score','Grade'],...rows.map(r=>[r.c.name,r.c.phone,r.loans,r.onTime,r.late,r.wo,r.overdueNow,r.score??'',r.grade])])">Excel (CSV)</button></div>
+ <div class="card">${table(['Client','Phone','Loans','On-time','Late','Written off','Overdue now','Score','Grade'],rows.map(r=>[esc(r.c.name),esc(r.c.phone),r.loans,r.onTime,r.late,r.wo,r.overdueNow,r.score??'—',gradeTag(r.grade)]),'No customers yet.',rows.map(r=>`data-s="${norm(r.c.name+r.c.phone)}"`))}</div>`;
+}
+function good(){
+ return S.c.map(c=>{const m=L().filter(l=>l.c==c.id),paid=m.filter(l=>l.st=='Paid'),ontime=paid.filter(l=>!l.lateSettled).length,
+  bad=m.some(l=>l.st=='Written off'||l.st=='Overdue'),late=paid.length-ontime;
+  return{c,n:m.length,paid:paid.length,ontime,late,bad,tot:m.reduce((s,l)=>s+l.paid,0),score:paid.length?Math.round(ontime/paid.length*100):0}})
+  .filter(x=>x.paid>0&&!x.bad&&x.score>=80).sort((a,b)=>b.score-a.score||b.tot-a.tot);
+}
+function repV(){
+ const g=good();
+ return `<div class="bar"><button class="btn g" onclick="window.print()">Print</button><button class="btn" onclick="csvDl('good-clients',[['Client','Phone','Loans','Fully paid','On time','Score %','Total paid'],...good().map(x=>[x.c.name,x.c.phone,x.n,x.paid,x.ontime,x.score,x.tot])])">Excel (CSV)</button></div>
+ <div class="card"><h2>Admin report — good paying clients</h2><p class="mu">Clients with at least one fully repaid loan, ≥80% settled on time, and no overdue or written-off loans. Ranked by score, then total paid.</p>
+ ${table(['#','Client','Phone','Loans','On time','Score','Total paid'],g.map((x,i)=>[i+1,esc(x.c.name),esc(x.c.phone),x.n,x.ontime+'/'+x.paid,`<span class="tag Paid">${x.score}%</span>`,fmt(x.tot)]),'No qualifying clients yet.')}</div>`;
+}
+function setV(){
+ const g=S.cfg;
+ return `<div class="card"><h2>Company settings</h2><div class="two"><div><label>Company name</label><input id="cn" value="${esc(g.name)}"><label>Address</label><input id="ca" value="${esc(g.addr)}"><label>Phone</label><input id="cp" value="${esc(g.phone)}"></div>
+ <div><label>Currency</label><input id="cc" value="${esc(g.cur)}"><label>Default interest rate (% per month, auto-filled when creating a new loan — still editable per loan)</label><input id="crate" type="number" step="0.01" value="${g.defRate??''}" placeholder="e.g. 10"><label>Default late-penalty (% of unpaid per month overdue)</label><input id="cx" type="number" step="0.1" value="${g.pen}"><label>Admin login name</label><input id="cadmin" value="${esc(g.adminName||'Admin')}"><label>Admin PIN (used to log in and to reveal amounts on screen)</label><input id="cpin" value="${esc(g.pin||'')}" placeholder="Leave blank for no PIN"><label>Logo</label><input id="cl" type="file" accept="image/*" onchange="logo(this)"></div></div>
+ <label>WhatsApp country code (no +, used when a phone is saved without one, e.g. 256 for Uganda)</label><input id="cwcc" value="${esc(g.waCc||'256')}" style="max-width:120px">
+ <label>WhatsApp reminder message (use {name}, {company}, {balance}, {due}, {days} as placeholders)</label><textarea id="cwt" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:inherit;color:var(--tx)">${esc(g.waTemplate||WA_DEFAULT)}</textarea>
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="saveCfg()">Save settings</button></div></div>
+ <div class="card"><h2>Collector accounts</h2><p class="mu">Give each field collector their own name and PIN. They can log in to record payments and see only their own collections — nothing else.</p>
+ <div class="bar"><button class="btn" onclick="colForm()">+ New collector</button></div>
+ ${table(['Name','PIN',''],S.collectors.map(c=>[esc(c.name),'••••',`<button class="btn s g" onclick="colForm(${c.id})">Edit</button>`]),'No collector accounts yet.')}</div>
+ <div class="card"><h2>Teller accounts</h2><p class="mu">Tellers work at the counter: they record savings deposits and withdrawals under their own name and PIN. They can't see loans, reports or settings.</p>
+ <div class="bar"><button class="btn" onclick="tellerForm()">+ New teller</button></div>
+ ${table(['Name','PIN',''],(S.tellers||[]).map(t=>[esc(t.name),'••••',`<button class="btn s g" onclick="tellerForm(${t.id})">Edit</button>`]),'No teller accounts yet.')}</div>
+ <div class="card"><h2>Supervisor accounts</h2><p class="mu">A supervisor can do almost everything you can — loans, payments, savings, expenses and reports — but cannot open Settings or Capital, see what you owe investors, or delete anything. You can create as many as you need.</p>
+ <div class="bar"><button class="btn" onclick="supForm()">+ New supervisor</button></div>
+ ${table(['Name','PIN',''],(S.supervisors||[]).map(t=>[esc(t.name),'••••',`<button class="btn s g" onclick="supForm(${t.id})">Edit</button>`]),'No supervisor accounts yet.')}</div>
+ <div class="card"><h2>Backup & restore</h2><div class="bar"><button class="btn" onclick="dl('loans-backup-'+today()+'.json',JSON.stringify(S))">Download backup</button><input id="rf" type="file" accept=".json" style="max-width:260px"><button class="btn g" onclick="restore()">Restore</button></div>
+ <p class="mu">Data is stored in this browser only. Download a backup regularly.</p>${storageInfo()}</div>
+ ${autoBackupV()}`;
+}
+function autoBackupV(){
+ if(!window.showDirectoryPicker)return `<div class="card"><h2>Automatic backups</h2><p class="mu">Automatic folder backups need Chrome or Edge on a computer. In this browser, please keep using the manual "Download backup" button above regularly.</p></div>`;
+ const g=S.cfg,has=!!dirHandle,needsReconnect=has&&dirPerm&&dirPerm!='granted';
+ return `<div class="card"><h2>Automatic backups</h2><p class="mu">Pick a folder once — after that, backups save there by themselves. Browsers require re-confirming folder access each time you reopen the app, which happens automatically in the background — but if it ever can't, it'll show here with a one-click fix rather than failing silently.</p>
+ <div class="bar"><button class="btn" onclick="pickDir()">${has?'Change folder':'Choose backup folder'}</button>${has?`<button class="btn g" onclick="backupNow()">Backup now</button>`:''}</div>
+ ${needsReconnect?`<div class="card" style="background:#b7791f14;border-color:var(--am);margin:10px 0"><b style="color:var(--am)">⚠ Backup folder access needs reconnecting for this session.</b><p class="mu" style="margin:4px 0 8px">This is a normal browser security step, not an error — it happens after the browser restarts. Automatic backups have been paused until you reconnect.</p><button class="btn s" onclick="reconnectDir()">Reconnect folder access</button></div>`:''}
+ ${(g.lastAutoBackupError&&!needsReconnect)?`<p class="hint" style="color:var(--rd)">⚠ Last automatic backup attempt failed (${new Date(g.lastAutoBackupError.at).toLocaleString()}): ${esc(g.lastAutoBackupError.msg)}</p>`:''}
+ ${has?`<p class="mu">Folder: <b>${esc(dirName||'(selected)')}</b> · Last successful automatic backup: ${g.lastAutoBackup?new Date(g.lastAutoBackup).toLocaleString():'never yet'}</p>
+ <div class="two"><div><label><input type="checkbox" id="abOn" ${g.autoBackup?'checked':''} style="width:auto;margin-right:6px">Back up automatically every day</label>
+ <label>At time</label><input id="abTime" type="time" value="${g.backupTime||'23:00'}">
+ <label><input type="checkbox" id="abClose" ${g.backupOnClose!==false?'checked':''} style="width:auto;margin-right:6px">Also back up when I close or leave the app</label></div>
+ <div><label>Keep the last</label><input id="abKeep" type="number" min="1" max="365" value="${g.backupKeep||14}"><label style="margin-top:-4px">backups (older ones are deleted automatically)</label></div></div>
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="saveBackupCfg()">Save backup settings</button></div>`:''}</div>`;
+}
+function logo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,200/i.width);c.width=i.width*s;c.height=i.height*s;c.getContext('2d').drawImage(i,0,0,c.width,c.height);S.cfg.logo=c.toDataURL('image/png');save();head()};i.src=r.result};r.readAsDataURL(f)}
+function saveCfg(){const an=$('#cadmin').value.trim()||'Admin';if(nameTaken(an,'admin'))return alert(`The name "${an}" is already used by a collector or teller. Every login name must be different.`);Object.assign(S.cfg,{adminName:an,name:$('#cn').value,addr:$('#ca').value,phone:$('#cp').value,cur:$('#cc').value||'UGX',defRate:$('#crate').value===''?null:+$('#crate').value,pen:+$('#cx').value||0,pin:$('#cpin').value.trim(),waCc:$('#cwcc').value.trim()||'256',waTemplate:$('#cwt').value.trim()||WA_DEFAULT});save();render();alert('Saved')}
+function saveBackupCfg(){Object.assign(S.cfg,{autoBackup:$('#abOn').checked,backupTime:$('#abTime').value||'23:00',backupOnClose:$('#abClose').checked,backupKeep:Math.max(1,+$('#abKeep').value||14)});save();render();alert('Saved')}
+// ---- automatic folder backups (Chrome/Edge desktop only, File System Access API)
+let dirHandle=null,dirName=null,dirPerm=null;
+function idbOp(mode,fn){return new Promise((res,rej)=>{const rq=indexedDB.open('loanapp-fs',1);rq.onupgradeneeded=()=>rq.result.createObjectStore('kv');
+ rq.onsuccess=()=>{const tx=rq.result.transaction('kv',mode);fn(tx.objectStore('kv'),res,rej)};rq.onerror=()=>rej(rq.error)})}
+const idbGet=k=>idbOp('readonly',(s,res,rej)=>{const g=s.get(k);g.onsuccess=()=>res(g.result);g.onerror=()=>rej(g.error)});
+const idbSet=(k,v)=>idbOp('readwrite',(s,res,rej)=>{const p=s.put(v,k);p.onsuccess=()=>res();p.onerror=()=>rej(p.error)});
+async function loadDirHandle(){if(!window.showDirectoryPicker)return;try{const h=await idbGet('backupDir');if(h){dirHandle=h;dirName=h.name;
+ try{dirPerm=await h.queryPermission({mode:'readwrite'})}catch(e){dirPerm='error'}
+ if(tab=='set')render()}}catch(e){}}
+async function pickDir(){try{const h=await window.showDirectoryPicker({id:'loanbackup',mode:'readwrite'});
+ const p=await h.requestPermission({mode:'readwrite'});if(p!=='granted'){alert('Permission was not granted.');return}
+ dirHandle=h;dirName=h.name;dirPerm='granted';await idbSet('backupDir',h);if(!S.cfg.backupTime){S.cfg.autoBackup=true;S.cfg.backupTime='23:00';S.cfg.backupOnClose=true;S.cfg.backupKeep=S.cfg.backupKeep||14;save()}
+ await backupNow(true);render();alert('Backup folder set. Backups will now save here automatically.')}catch(e){if(e.name!='AbortError')alert('Could not use that folder: '+e.message)}}
+async function reconnectDir(){if(!dirHandle)return;try{dirPerm=await dirHandle.requestPermission({mode:'readwrite'});
+ if(dirPerm!='granted'){alert('Permission was not granted.');render();return}
+ await backupNow(false)}catch(e){alert('Could not reconnect: '+(e.message||e));render()}}
+async function backupNow(silent){
+ if(!dirHandle)return;
+ try{
+  let perm=await dirHandle.queryPermission({mode:'readwrite'});dirPerm=perm;
+  if(perm!='granted'){
+   if(silent){S.cfg.lastAutoBackupError={msg:'Folder access needs reconnecting — open Settings and click "Reconnect".',at:new Date().toISOString()};save();return}
+   perm=await dirHandle.requestPermission({mode:'readwrite'});dirPerm=perm;
+   if(perm!='granted'){S.cfg.lastAutoBackupError={msg:'Permission was not granted.',at:new Date().toISOString()};save();return}
+  }
+  const fh=await dirHandle.getFileHandle(`backup-${today()}.json`,{create:true}),w=await fh.createWritable();
+  await w.write(JSON.stringify(S));await w.close();
+  S.cfg.lastAutoBackup=new Date().toISOString();S.cfg.lastAutoBackupError=null;save();
+  await pruneBackups();if(!silent){render();alert('Backup saved.')}
+ }catch(e){S.cfg.lastAutoBackupError={msg:e.message||String(e),at:new Date().toISOString()};save();if(!silent){render();alert('Backup failed: '+(e.message||e))}}
+}
+async function pruneBackups(){
+ if(!dirHandle)return;try{
+  const keep=S.cfg.backupKeep||14,files=[];
+  for await(const [name] of dirHandle.entries())if(/^backup-\d{4}-\d{2}-\d{2}\.json$/.test(name))files.push(name);
+  files.sort();while(files.length>keep){const old=files.shift();try{await dirHandle.removeEntry(old)}catch(e){}}
+ }catch(e){}
+}
+setInterval(()=>{if(!dirHandle||!S.cfg.autoBackup)return;const t=new Date(),hm=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+ if(hm==(S.cfg.backupTime||'23:00')&&(S.cfg.lastAutoBackup||'').slice(0,10)!=today())backupNow(true)},30000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirHandle&&S.cfg.backupOnClose!==false)backupNow(true)});
+window.addEventListener('pagehide',()=>{if(dirHandle&&S.cfg.backupOnClose!==false)backupNow(true)});
+function restore(){const f=$('#rf').files[0];if(!f)return alert('Choose a backup file');const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.c||!d.l||!d.cfg)throw 0;if(!confirm('Replace all current data with this backup?'))return;
+ d.collectors=d.collectors||[];d.investors=d.investors||[];d.expenses=d.expenses||[];d.savings=d.savings||[];d.tellers=d.tellers||[];d.supervisors=d.supervisors||[];S=d;assignAccounts();save();render()}catch(e){alert('Invalid backup file')}};r.readAsText(f)}
+function storageInfo(){const bytes=new Blob([JSON.stringify(S)]).size,kb=(bytes/1024).toFixed(0),pct=Math.min(100,Math.round(bytes/(5*1024*1024)*100));
+ return `<p class="mu">Data size: ${kb} KB (browsers typically allow about 5–10 MB total). ${pct>=70?`<b style="color:${pct>=90?'var(--rd)':'var(--am)'}">${pct}% of a typical 5 MB limit — ${pct>=90?'back up now and consider removing some customer photos.':'keep an eye on this, especially if you add more photos.'}</b>`:`Comfortably within limits (${pct}%).`}</p>`;
+}
+// ---- forms
+const dlg=$('#dlg');
+function open(h){dlg.innerHTML=h;dlg.showModal()}
+window.addEventListener('beforeunload',e=>{if(dlg.open){e.preventDefault();e.returnValue=''}});
+let formPhoto=null;
+function custForm(id){const c=S.c.find(x=>x.id==id)||{};formPhoto=c.photo||null;
+ open(`<h2>${id?'Edit':'New'} customer</h2>
+ <div style="text-align:center;margin-bottom:6px"><img id="fphimg" src="${formPhoto||''}" style="width:88px;height:88px;object-fit:cover;border-radius:10px;background:var(--bg);border:1px solid var(--bd);display:${formPhoto?'block':'none'};margin:0 auto 6px"></div>
+ <label>Passport photo</label><input id="fph" type="file" accept="image/*" capture="environment" onchange="custPhoto(this)">
+ <label>Name</label><input id="f1" value="${esc(c.name)}"><label>Phone</label><input id="f2" value="${esc(c.phone)}"><label>Address</label><input id="f3" value="${esc(c.addr)}"><label>ID number</label><input id="f4" value="${esc(c.nid)}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="custSave(${id||0})">Save</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function custPhoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{
+ const s=Math.min(1,320/i.width,320/i.height),c=document.createElement('canvas');c.width=i.width*s;c.height=i.height*s;c.getContext('2d').drawImage(i,0,0,c.width,c.height);
+ formPhoto=c.toDataURL('image/jpeg',0.85);const im=$('#fphimg');im.src=formPhoto;im.style.display='block'};i.src=r.result};r.readAsDataURL(f)}
+function custSave(id){const v=[1,2,3,4].map(i=>$('#f'+i).value.trim());if(!v[0])return alert('Name required');
+ const o={name:v[0],phone:v[1],addr:v[2],nid:v[3],photo:formPhoto};if(id)Object.assign(S.c.find(x=>x.id==id),o);else S.c.push({id:S.n++,...o});save();dlg.close();render()}
+function loanForm(pre,editId,vals){if(!S.c.length)return alert('Add a customer first');
+ const l=editId?S.l.find(x=>x.id==editId):null;
+ open(`<h2>${l?'Edit loan':'New loan'}</h2><label>Customer</label><select id="f1">${S.c.map(c=>`<option value="${c.id}" ${(l?l.c:pre)==c.id?'selected':''}>${esc(c.name)} ${esc(c.phone)}</option>`).join('')}</select>
+ <label>Principal (${esc(S.cfg.cur)})</label><input id="f2" type="number" min="0" value="${l?l.p:(vals?vals.p:'')}"><label>Interest rate % per month</label><input id="f3" type="number" step="0.01" placeholder="e.g. 10" value="${l?l.r:(vals?vals.r:(S.cfg.defRate??''))}">
+ <label>Term (months)</label><input id="f4" type="number" min="1" value="${l?l.t:(vals?vals.t:1)}"><label>Start date</label><input id="f5" type="date" required value="${l&&l.d?l.d:(vals&&vals.d?vals.d:today())}"><label>Late penalty % per month overdue</label><input id="f6" type="number" step="0.1" value="${l?l.pr:S.cfg.pen}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="loanSave(${editId||0})">${l?'Save changes':'Create loan'}</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function loanSave(editId){const p=+$('#f2').value,r=$('#f3').value,t=+$('#f4').value,d=$('#f5').value;
+ if(!(p>0)||r===''||!(t>0))return alert('Enter principal, interest rate and term');
+ if(!d)return alert('Start date is required');
+ const o={c:+$('#f1').value,p,r:+r,t,d,pr:+$('#f6').value||0};
+ if(editId)Object.assign(S.l.find(x=>x.id==editId),o);else S.l.push({id:S.n++,...o,pay:[],wo:null});
+ save();dlg.close();render()}
+function payForm(id){const l=L().find(x=>x.id==id);
+ open(`<h2>Payment — ${esc(l.cn)}</h2><p class="mu">Balance ${fmt(l.bal)}</p><label>Amount</label><input id="f1" type="number" value="${Math.round(l.bal)}"><label>Date</label><input id="f2" type="date" value="${today()}">
+ <label>Receipt number</label><input id="f3" placeholder="e.g. RC-00231" autocomplete="off"><label>Collected by</label>${role=='collector'?`<input id="f4" value="${esc(curUser.name)}" readonly>`:`<input id="f4" placeholder="Field collector's name" autocomplete="off">`}
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="paySave(${id})">Record</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function paySave(id){const a=+$('#f1').value;if(!(a>0))return;const rc=$('#f3').value.trim();
+ const dup=findReceipt(rc);if(dup){alert(`Receipt "${rc}" is already used — ${fmtN(dup.p.a)} from ${esc(cust(dup.loan.c).name)} on ${dup.label}, ${dup.p.dt}. Each receipt number can only be entered once. Please check the receipt book.`);return}
+ const l=S.l.find(x=>x.id==id);l.pay.push({a,dt:$('#f2').value,rc,by:role=='collector'?curUser.name:$('#f4').value.trim(),cby:role=='collector'?curUser.id:null});save();const idx=l.pay.length-1;dlg.close();render();afterPay(id,idx)}
+function topupForm(id){const l=L().find(x=>x.id==id);
+ open(`<h2>Top up — ${esc(l.cn)}</h2><p class="mu">Closes loan #${id} and splits it into two linked loans: the outstanding balance continues at the <b>original rate (${l.r}%/mo)</b>, and any new money you add is a separate loan at a <b>rate you choose</b>.</p>
+ <label>Outstanding balance to roll over</label><p><b>${fmt(l.bal)}</b> at ${l.r}%/mo (unchanged)</p>
+ <label>Additional amount — new money (${esc(S.cfg.cur)}, 0 if none)</label><input id="f1" type="number" min="0" value="0">
+ <label>Rate for the additional amount % per month</label><input id="f2" type="number" step="0.01" value="${l.r}" placeholder="only used if additional amount > 0">
+ <label>Term for both loans (months)</label><input id="f3" type="number" min="1" value="1">
+ <label>Start date</label><input id="f4" type="date" required value="${today()}"><label>Late penalty % per month overdue (both loans)</label><input id="f5" type="number" step="0.1" value="${l.pr}">
+ <div class="bar" style="margin-top:12px"><button class="btn" onclick="topupSave(${id})">Create linked loan(s)</button><button class="btn g" onclick="dlg.close()">Cancel</button></div>`)}
+function topupSave(oldId){const old=S.l.find(x=>x.id==oldId),oldBal=calc(old).bal,add=+$('#f1').value||0,newR=$('#f2').value,t=+$('#f3').value,d=$('#f4').value,pr=+$('#f5').value||0;
+ if(!(t>0))return alert('Enter a term');if(!d)return alert('Start date is required');if(add>0&&newR==='')return alert('Enter a rate for the additional amount');
+ const rolloverId=S.n++;S.l.push({id:rolloverId,c:old.c,p:oldBal,r:old.r,t,d,pr,pay:[],wo:null,topFrom:oldId,topKind:'rollover'});
+ let addlId=null;
+ if(add>0){addlId=S.n++;S.l.push({id:addlId,c:old.c,p:add,r:+newR,t,d,pr,pay:[],wo:null,topFrom:oldId,topKind:'topup'})}
+ old.top={date:today(),into:addlId?[rolloverId,addlId]:[rolloverId]};save();dlg.close();render();
+ alert(`Loan #${oldId} closed.\nRollover loan #${rolloverId}: ${fmtN(oldBal)} at ${old.r}%/mo.`+(addlId?`\nTop-up loan #${addlId}: ${fmtN(add)} at ${newR}%/mo.`:''))}
+function afterPay(id,idx){const l=S.l.find(x=>x.id==id),p=l.pay[idx];
+ open(`<h2>Payment recorded</h2><p class="mu">${fmt(p.a)} from ${esc(cust(l.c).name)}${p.rc?` · Receipt ${esc(p.rc)}`:''}</p><div class="bar" style="margin-top:12px"><button class="btn" onclick="printReceipt(${id},${idx})">🖨 Print receipt</button><button class="btn g" onclick="dlg.close();render()">Done</button></div>`)}
+function receiptHtml(id,idx){const l=S.l.find(x=>x.id==id),p=l.pay[idx],c=cust(l.c),g=S.cfg,bal=calc({...l,pay:l.pay.slice(0,idx+1)}).bal;
+ return `<div style="text-align:center;margin-bottom:10px">${g.logo?`<img src="${g.logo}" style="max-height:70px;max-width:100%"><br>`:''}<b style="font-size:16px">${esc(g.name)}</b><br><span style="color:#555">${esc(g.addr)}${g.addr&&g.phone?' · ':''}${esc(g.phone)}</span></div>
+ <h3 style="text-align:center;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin:10px 0">PAYMENT RECEIPT</h3>
+ <table style="width:100%;font-size:13px"><tr><td>Receipt No</td><td style="text-align:right"><b>${esc(p.rc)||'—'}</b></td></tr><tr><td>Date</td><td style="text-align:right">${p.dt}</td></tr>
+ <tr><td>Client</td><td style="text-align:right">${esc(c.name)}</td></tr><tr><td>Phone</td><td style="text-align:right">${esc(c.phone)}</td></tr>
+ <tr><td>Loan ref.</td><td style="text-align:right">#${l.id}</td></tr><tr><td>Collected by</td><td style="text-align:right">${esc(p.by)||'—'}</td></tr></table>
+ <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:16px"><b>Amount paid</b><b>${S.cfg.cur} ${Math.round(p.a).toLocaleString()}</b></div>
+ <div style="display:flex;justify-content:space-between;color:#555;margin-top:4px"><span>Remaining balance</span><span>${S.cfg.cur} ${Math.round(bal).toLocaleString()}</span></div>
+ <p style="text-align:center;color:#555;margin-top:16px">Thank you for your payment.</p>`}
+function printReceipt(id,idx){$('#rcpt').innerHTML=receiptHtml(id,idx);document.body.classList.add('printrec');window.print()}
+window.addEventListener('afterprint',()=>document.body.classList.remove('printrec'));
+function wo(id,on){if(on&&!confirm('Write this loan off as a bad loan?'))return;S.l.find(x=>x.id==id).wo=on?{date:today()}:null;save();render()}
+function payList(id){const l=S.l.find(x=>x.id==id),c=cust(l.c);
+ open(`<h2>Payments — ${esc(c.name)}</h2>${table(['Date','Amount','Receipt No','Collected by',''],l.pay.map((p,i)=>[
+  `<input value="${esc(p.dt)}" type="date" style="min-width:130px" onchange="editPay(${id},${i},'dt',this.value)">`,
+  `<input value="${p.a}" type="number" style="width:90px" onchange="editPay(${id},${i},'a',+this.value)">`,
+  `<input value="${esc(p.rc)}" placeholder="—" style="width:110px" onchange="editPay(${id},${i},'rc',this.value)">`,
+  `<input value="${esc(p.by)}" placeholder="—" style="width:110px" onchange="editPay(${id},${i},'by',this.value)">`,
+  `<button class="btn s g" onclick="printReceipt(${id},${i})">🖨</button>${role=='admin'?` <button class="btn s d" onclick="delPay(${id},${i})">✕</button>`:''}`
+ ]))}<div class="bar" style="margin-top:12px"><button class="btn g" onclick="dlg.close()">Close</button></div>`)}
+function editPay(id,i,k,v){
+ if(k=='rc'){const dup=findReceipt(v,id,i);if(dup){alert(`Receipt "${v}" is already used — ${fmtN(dup.p.a)} from ${esc(cust(dup.loan.c).name)} on ${dup.label}, ${dup.p.dt}. Not saved.`);payList(id);return}}
+ S.l.find(x=>x.id==id).pay[i][k]=v;save()}
+function delPay(id,i){if(role!='admin')return alert('Only the admin can delete records.');if(!confirm('Delete this payment entry?'))return;S.l.find(x=>x.id==id).pay.splice(i,1);save();dlg.close();render()}
+// ---- smart search
+$('#q').addEventListener('input',e=>{
+ const t=norm(e.target.value),box=$('#sr');if(!t){box.style.display='none';return}
+ const row=(tab,c,extra)=>`<div onclick="$('#sr').style.display='none';$('#q').value='';go('${tab}',${c.id})"><b>${esc(c.name)}</b> <span class="mu">${extra}</span></div>`;
+ let out=S.c.filter(c=>norm(c.name).includes(t)||norm(c.phone).includes(t)).slice(0,8).map(c=>row('stmt',c,esc(c.phone)));
+ out=out.concat(S.c.filter(c=>c.acct&&norm(c.acct).includes(t)).slice(0,8).map(c=>row('sstmt',c,'Savings account '+esc(c.acct))));
+ if(!out.length){
+  S.l.forEach(l=>l.pay.forEach(p=>{if(p.rc&&norm(p.rc).includes(t))out.push(row('stmt',cust(l.c),`receipt ${esc(p.rc)} · ${fmtN(p.a)} · ${p.dt}`))}));
+  (S.savings||[]).forEach(x=>{if(x.rc&&norm(x.rc).includes(t))out.push(row('sstmt',cust(x.c),`savings ${x.type} ${esc(x.rc)} · ${fmtN(x.a)} · ${x.dt}`))});
+ }
+ box.innerHTML=out.slice(0,8).join('')||'<div class="mu">No match</div>';box.style.display='block'});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#sr').style.display='none'});
+render();boot();loadDirHandle();
+(async()=>{try{DL=await claude.use('downloads')}catch(e){}})();
+</script></body></html>
