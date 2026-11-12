@@ -1,0 +1,17 @@
+{
+  "name": "Venus Loan & Savings Manager",
+  "short_name": "Venus Loans",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#10243a",
+  "theme_color": "#10243a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
