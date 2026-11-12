@@ -5,4 +5,4 @@ pages_build_output_dir = "."
 [[d1_databases]]
 binding = "DB"
 database_name = "venus-loans-db"
-database_id = "dbb4f79226-01d9-4b70-b811-99496a95ee01"
+database_id = "b4f79226-01d9-4b70-b811-99496a95ee01"
