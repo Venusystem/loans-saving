@@ -69,10 +69,32 @@ h2{margin:0 0 10px;font-size:17px}.mu{color:var(--mu)}svg text{fill:var(--mu);fo
 const $=s=>document.querySelector(s);
 let S={c:[],l:[],collectors:[],cfg:{name:'My Lending Co.',addr:'',phone:'',cur:'UGX',pen:5,logo:'',pin:''},n:1},tab='dash',sel=null,DL=null,role=null,curUser=null,collectQ='',rFrom=null,rTo=null,rCol='all',stmtFrom=null,stmtTo=null,selLoan=null,selInv=null,selSav=null;
 const inRange=d=>(!stmtFrom||d>=stmtFrom)&&(!stmtTo||d<=stmtTo);
-try{const r=localStorage.getItem('loanapp');if(r)S=JSON.parse(r)}catch(e){}
+// Cloud D1 is authoritative; browser data is never loaded automatically.
 S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();
 let saveFailed=false;
-const save=()=>{try{localStorage.setItem('loanapp',JSON.stringify(S));if(saveFailed){saveFailed=false;$('#saveErr').style.display='none'}}catch(e){saveFailed=true;$('#saveErr').style.display='flex'}};
+let cloudRevision=0,cloudBusy=false,cloudPending=false,cloudLocked=false;
+const save=()=>{cloudPending=true;if(!cloudBusy)void flushCloud()};
+async function flushCloud(){
+ if(cloudBusy||cloudLocked)return;cloudBusy=true;
+ try{
+  while(cloudPending){
+   cloudPending=false;
+   const res=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:cloudRevision,state:S})});
+   if(res.status===409){cloudLocked=true;alert('Another device changed the database. Your unsaved changes are still visible here. Export a backup, then reload. No changes were overwritten.');break}
+   if(!res.ok)throw Error((await res.json()).error||'Cloud save failed');
+   cloudRevision=(await res.json()).revision;
+  }
+  if(!cloudLocked){saveFailed=false;$('#saveErr').style.display='none'}
+ }catch(e){saveFailed=true;cloudLocked=true;$('#saveErr').style.display='flex';alert('Cloud save failed: '+e.message+'. Export your current data before reloading.')}
+ finally{cloudBusy=false}
+}
+async function cloudStart(){
+ const gate=$('#gate');document.body.classList.add('gated');gate.style.display='flex';
+ gate.innerHTML='<div class="card"><h2>Cloud sign in</h2><p>Sign in to access the shared D1 database.</p><label>Cloud administrator password</label><input id="cloudPass" type="password" autocomplete="current-password"><div class="bar"><button class="btn" id="cloudLogin">Sign in</button></div><p class="hint" id="cloudMsg"></p></div>';
+ const load=async()=>{const r=await fetch('/api/state');if(!r.ok)throw Error('Cannot load cloud data: '+r.status);const d=await r.json();cloudRevision=d.revision;if(d.state)S=d.state;S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();render();boot();if(!d.state){const b=document.createElement('button');b.className='btn';b.textContent='Import previous browser data';b.onclick=()=>{const raw=localStorage.getItem('loanapp');if(!raw)return alert('No previous browser data on this device');if(!confirm('Import this device\\'s saved records to the EMPTY cloud database?'))return;try{const data=JSON.parse(raw);if(!Array.isArray(data.c)||!Array.isArray(data.l)||!data.cfg)throw Error('Invalid backup');S=data;save();render();boot()}catch(e){alert(e.message)}};gate.appendChild(b)}};
+ try{const r=await fetch('/api/session');if(r.ok){await load();return}}catch(e){}
+ $('#cloudLogin').onclick=async()=>{const pass=$('#cloudPass').value;$('#cloudMsg').textContent='Signing in…';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});if(!r.ok)throw Error('Invalid password or cloud configuration');await load()}catch(e){$('#cloudMsg').textContent=e.message}};
+}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=n=>`<span class="amt">${S.cfg.cur} ${Math.round(n).toLocaleString()}</span>`;
 const fmtN=n=>`${S.cfg.cur} ${Math.round(n).toLocaleString()}`;
@@ -758,6 +780,6 @@ $('#q').addEventListener('input',e=>{
  }
  box.innerHTML=out.slice(0,8).join('')||'<div class="mu">No match</div>';box.style.display='block'});
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#sr').style.display='none'});
-render();boot();loadDirHandle();
+render();cloudStart();loadDirHandle();
 (async()=>{try{DL=await claude.use('downloads')}catch(e){}})();
 </script></body></html>
