@@ -69,10 +69,56 @@ h2{margin:0 0 10px;font-size:17px}.mu{color:var(--mu)}svg text{fill:var(--mu);fo
 const $=s=>document.querySelector(s);
 let S={c:[],l:[],collectors:[],cfg:{name:'My Lending Co.',addr:'',phone:'',cur:'UGX',pen:5,logo:'',pin:''},n:1},tab='dash',sel=null,DL=null,role=null,curUser=null,collectQ='',rFrom=null,rTo=null,rCol='all',stmtFrom=null,stmtTo=null,selLoan=null,selInv=null,selSav=null;
 const inRange=d=>(!stmtFrom||d>=stmtFrom)&&(!stmtTo||d<=stmtTo);
-try{const r=localStorage.getItem('loanapp');if(r)S=JSON.parse(r)}catch(e){}
+// Cloud D1 is authoritative; browser data is never loaded automatically.
 S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();
 let saveFailed=false;
-const save=()=>{try{localStorage.setItem('loanapp',JSON.stringify(S));if(saveFailed){saveFailed=false;$('#saveErr').style.display='none'}}catch(e){saveFailed=true;$('#saveErr').style.display='flex'}};
+let cloudRevision=0,cloudBusy=false,cloudPending=false,cloudLocked=false;
+const save=()=>{cloudPending=true;if(!cloudBusy)void flushCloud()};
+async function flushCloud(){
+ if(cloudBusy||cloudLocked)return;cloudBusy=true;
+ try{
+  while(cloudPending){
+   cloudPending=false;
+   const res=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:cloudRevision,state:S})});
+   if(res.status===409){cloudLocked=true;alert('Another device changed the database. Your unsaved changes are still visible here. Export a backup, then reload. No changes were overwritten.');break}
+   if(!res.ok)throw Error((await res.json()).error||'Cloud save failed');
+   cloudRevision=(await res.json()).revision;
+  }
+  if(!cloudLocked){saveFailed=false;$('#saveErr').style.display='none'}
+ }catch(e){saveFailed=true;cloudLocked=true;$('#saveErr').style.display='flex';alert('Cloud save failed: '+e.message+'. Export your current data before reloading.')}
+ finally{cloudBusy=false}
+}
+async function cloudStart(){
+ const gate=$('#gate');document.body.classList.add('gated');gate.style.display='flex';
+ gate.innerHTML='<div class="card"><h2>Cloud sign in</h2><p>Sign in to access the shared D1 database.</p><label>Cloud administrator password</label><input id="cloudPass" type="password" autocomplete="current-password"><div class="bar"><button class="btn" id="cloudLogin">Sign in</button></div><p class="hint" id="cloudMsg"></p></div>';
+ const load=async()=>{
+ const r=await fetch('/api/state');if(!r.ok)throw Error('Cannot load cloud data: '+r.status);
+ const d=await r.json();cloudRevision=d.revision;
+ if(!d.state){
+  gate.innerHTML='<div class="card"><h2>Set up shared cloud records</h2><p>The cloud database is empty. Import your existing Loan Manager JSON backup, or start with a blank database.</p><label>Loan Manager backup (.json)</label><input id="cloudBackup" type="file" accept=".json,application/json"><div class="bar"><button class="btn" id="cloudImport">Import backup</button><button class="btn g" id="cloudBlank">Start empty</button></div><p class="hint" id="cloudImportMsg"></p></div>';
+  const finish=()=>{S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();render();boot()};
+  $('#cloudImport').onclick=async()=>{
+   const file=$('#cloudBackup').files[0];if(!file)return $('#cloudImportMsg').textContent='Choose a JSON backup first.';
+   if(file.size>3500000)return $('#cloudImportMsg').textContent='Backup exceeds the 3.5 MB import limit.';
+   try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data.c)||!Array.isArray(data.l)||!data.cfg||typeof data.cfg!=='object'||!Number.isSafeInteger(data.n))throw Error('Not a supported Loan Manager backup.');
+    if(new Set(data.c.map(x=>x.id)).size!==data.c.length||new Set(data.l.map(x=>x.id)).size!==data.l.length)throw Error('Duplicate customer or loan IDs in backup.');
+    if(!confirm('Import '+data.c.length+' customers and '+data.l.length+' loans into the EMPTY cloud database? This action cannot be undone from the app.'))return;
+    $('#cloudImport').disabled=true;
+    const response=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:0,state:data})});
+    if(!response.ok)throw Error((await response.json()).error||'Import failed');
+    cloudRevision=(await response.json()).revision;S=data;finish();
+   }catch(e){$('#cloudImportMsg').textContent=e.message;$('#cloudImport').disabled=false}
+  };
+  $('#cloudBlank').onclick=()=>{if(confirm('Start with a blank cloud database? You can only import a backup automatically while the database is empty.'))finish()};
+  return;
+ }
+ S=d.state;S.collectors=S.collectors||[];S.investors=S.investors||[];S.expenses=S.expenses||[];S.savings=S.savings||[];S.tellers=S.tellers||[];S.supervisors=S.supervisors||[];assignAccounts();render();boot();
+}
+ try{const r=await fetch('/api/session');if(r.ok){await load();return}}catch(e){}
+ $('#cloudLogin').onclick=async()=>{const pass=$('#cloudPass').value;$('#cloudMsg').textContent='Signing in…';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});if(!r.ok)throw Error('Invalid password or cloud configuration');await load()}catch(e){$('#cloudMsg').textContent=e.message}};
+}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=n=>`<span class="amt">${S.cfg.cur} ${Math.round(n).toLocaleString()}</span>`;
 const fmtN=n=>`${S.cfg.cur} ${Math.round(n).toLocaleString()}`;
@@ -758,6 +804,6 @@ $('#q').addEventListener('input',e=>{
  }
  box.innerHTML=out.slice(0,8).join('')||'<div class="mu">No match</div>';box.style.display='block'});
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#sr').style.display='none'});
-render();boot();loadDirHandle();
+render();cloudStart();loadDirHandle();
 (async()=>{try{DL=await claude.use('downloads')}catch(e){}})();
 </script></body></html>
